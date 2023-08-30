@@ -6,6 +6,8 @@ export type AudioInfo = {
   category_id: number;
   audio_url: string;
   thumbnail_url: string;
+  duration: string;
+  [key: string]: string | number;
 };
 
 export type AudioUpload = {
