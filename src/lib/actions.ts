@@ -55,3 +55,32 @@ export const saveAudioDetails = async (audioInfo: AudioInfo) => {
     throw err;
   }
 };
+
+export const loginUser = async (credentials: {
+  username: string;
+  password: string;
+}) => {
+  try {
+    const response = await fetch(`${serverUrl}${API_ENDPOINTS.AUTH}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: credentials.username,
+        password: credentials.password,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      // You might want to handle the received token or user data here
+      return data;
+    } else {
+      throw new Error("Login failed");
+    }
+  } catch (err) {
+    throw err;
+  }
+};
