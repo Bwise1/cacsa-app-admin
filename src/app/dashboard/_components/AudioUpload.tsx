@@ -2,6 +2,7 @@
 import { uploadAudio } from "@/lib/actions";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { ApiResponse } from "@/types";
 
 interface AudioUploadProps {
   onUploadResult: (uploadResult: string) => void;
@@ -16,16 +17,22 @@ const AudioUpload: React.FC<AudioUploadProps> = ({ onUploadResult }) => {
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const audioFile = event.target.files?.[0];
+    setUploadProgress(0);
     if (audioFile) {
       const formData = new FormData();
       formData.append("audiofile", audioFile);
 
       setUploading(true);
       try {
-        const response = await uploadAudio(formData);
+        const response: ApiResponse = await uploadAudio(
+          formData,
+          (progress) => {
+            setUploadProgress(progress); // Update progress state
+          }
+        );
         setUploadResult(response);
         onUploadResult(response.link);
-        console.log(response);
+        console.log(response.link);
       } catch (error) {
         console.error("Error uploading audio:", error);
       } finally {
@@ -47,14 +54,16 @@ const AudioUpload: React.FC<AudioUploadProps> = ({ onUploadResult }) => {
   const handleDrop = (event: React.DragEvent<HTMLLabelElement>) => {
     event.preventDefault();
     event.currentTarget.classList.remove("hover:bg-gray-200");
-
+    setUploadProgress(0);
     const audioFile = event.dataTransfer.files[0];
     if (audioFile) {
       const formData = new FormData();
       formData.append("audiofile", audioFile);
 
       setUploading(true);
-      uploadAudio(formData)
+      uploadAudio(formData, (progress) => {
+        setUploadProgress(progress); // Update progress state
+      })
         .then((response) => {
           setUploadResult(response);
           console.log(response);
@@ -68,17 +77,17 @@ const AudioUpload: React.FC<AudioUploadProps> = ({ onUploadResult }) => {
     }
   };
 
-  useEffect(() => {
-    // Listen for changes in uploadProgress and adjust the width of the progress bar
-    if (uploading) {
-      const interval = setInterval(() => {
-        setUploadProgress((prevProgress) =>
-          prevProgress < 100 ? prevProgress + 1 : 100
-        );
-      }, 100); // Adjust the interval as needed
-      return () => clearInterval(interval);
-    }
-  }, [uploading]);
+  // useEffect(() => {
+  //   // Listen for changes in uploadProgress and adjust the width of the progress bar
+  //   if (uploading) {
+  //     const interval = setInterval(() => {
+  //       setUploadProgress((prevProgress) =>
+  //         prevProgress < 100 ? prevProgress + 1 : 100
+  //       );
+  //     }, 100); // Adjust the interval as needed
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [uploading]);
   return (
     <div>
       <div className="flex items-center justify-center w-full">
@@ -117,14 +126,14 @@ const AudioUpload: React.FC<AudioUploadProps> = ({ onUploadResult }) => {
       </div>
       {/* Progress bar */}
 
-      {uploading && (
+      {uploading || uploadResult ? (
         <div className="w-full bg-gray-200 rounded-full h-2 my-4">
           <div
             className="bg-green h-2 rounded-full"
             style={{ width: `${uploadProgress}%` }}
           ></div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

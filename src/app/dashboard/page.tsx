@@ -1,7 +1,4 @@
 import React from "react";
-import Input from "./_components/Input";
-import Select from "./_components/Select";
-import Image from "next/image";
 import LeftSideBar from "./leftSidebar";
 import Middle from "./middle";
 import RightSideBar from "./rightSidebar";

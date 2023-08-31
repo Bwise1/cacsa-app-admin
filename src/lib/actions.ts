@@ -1,18 +1,46 @@
 import { AudioInfo } from "@/types";
 import { API_ENDPOINTS } from "./endpoints";
+import { ApiResponse } from "@/types";
 
 const serverUrl = process.env.NEXT_PUBLIC_REST_API_ENDPOINT;
 
-export const uploadAudio = async (formData: FormData) => {
-  try {
-    const response = await fetch(`${serverUrl}${API_ENDPOINTS.UPLOAD_AUDIO}`, {
-      method: "POST",
-      body: formData,
+// export const uploadAudio = async (formData: FormData) => {
+//   try {
+//     const response = await fetch(`${serverUrl}${API_ENDPOINTS.UPLOAD_AUDIO}`, {
+//       method: "POST",
+//       body: formData,
+//     });
+//     return response.json();
+//   } catch (err) {
+//     throw err;
+//   }
+// };
+
+export const uploadAudio = async (
+  formData: FormData,
+  onProgress: (progress: number) => void
+): Promise<ApiResponse> => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", (event) => {
+      const progress = (event.loaded / event.total) * 100;
+      console.log(progress);
+      onProgress(progress);
     });
-    return response.json();
-  } catch (err) {
-    throw err;
-  }
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error("Error uploading audio"));
+        }
+      }
+    };
+
+    xhr.open("POST", `${serverUrl}${API_ENDPOINTS.UPLOAD_AUDIO}`, true);
+    xhr.send(formData);
+  });
 };
 
 export const uploadThumbNail = async (formData: FormData) => {

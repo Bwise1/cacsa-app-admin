@@ -54,13 +54,6 @@ const SaveAudio: React.FC = ({}) => {
     }));
   };
 
-  // const handleSave = async (): Promise<void> => {
-  //   const response = await saveAudioDetails(audioInfo);
-  //   if (response.status === "success") {
-  //     console.log("Saved successful");
-  //     setAudioInfo(initialAudioInfo);
-  //   }
-  // };
   const handleSave = async (): Promise<void> => {
     // Start submitting
     console.log(audioInfo);

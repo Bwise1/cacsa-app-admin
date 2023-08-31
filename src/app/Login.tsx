@@ -12,18 +12,25 @@ export default function Login() {
     e.preventDefault();
 
     // Use the signIn function from next-auth
-    const result = await signIn("credentials", {
-      username,
-      password,
-      // Add any other fields required by your custom signIn function
-    });
-    console.log("RESULT RESULT RESULT", result);
-    if (result?.error) {
-      console.error("Login failed:", result.error);
-    } else {
-      // Handle successful login, e.g., redirect to dashboard
-      console.log("Logged IN");
+    try {
+      const result = await signIn("credentials", {
+        username,
+        password,
+        redirect: true,
+        callbackUrl: "/dashboard",
+        // Add any other fields required by your custom signIn function
+      });
+      // if (result?.ok) {
+      //   console.log(result);
+      //   // Handle successful login, e.g., redirect to dashboard
       //   router.push("/dashboard");
+      //   console.log("Logged IN");
+      //   console.log("RESULT RESULT RESULT", result);
+      // } else {
+      //   console.error("Login failed:", result?.error);
+      // }
+    } catch (error) {
+      console.error("An error occurred:", error);
     }
   };
 
