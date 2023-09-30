@@ -24,7 +24,6 @@ export const uploadAudio = async (
     const xhr = new XMLHttpRequest();
     xhr.upload.addEventListener("progress", (event) => {
       const progress = (event.loaded / event.total) * 100;
-      console.log(progress);
       onProgress(progress);
     });
 

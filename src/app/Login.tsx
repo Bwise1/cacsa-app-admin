@@ -16,19 +16,17 @@ export default function Login() {
       const result = await signIn("credentials", {
         username,
         password,
-        redirect: true,
-        callbackUrl: "/dashboard",
-        // Add any other fields required by your custom signIn function
+        redirect: false,
       });
-      // if (result?.ok) {
-      //   console.log(result);
-      //   // Handle successful login, e.g., redirect to dashboard
-      //   router.push("/dashboard");
-      //   console.log("Logged IN");
-      //   console.log("RESULT RESULT RESULT", result);
-      // } else {
-      //   console.error("Login failed:", result?.error);
-      // }
+      if (result?.error) {
+        console.log(result.error);
+      } else {
+        console.info("from login page", result);
+        // Handle successful login, e.g., redirect to dashboard
+        router.push("/dashboard");
+        // console.log("Logged IN");
+        // console.log("RESULT RESULT RESULT", result);
+      }
     } catch (error) {
       console.error("An error occurred:", error);
     }

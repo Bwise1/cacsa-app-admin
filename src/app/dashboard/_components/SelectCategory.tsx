@@ -22,6 +22,7 @@ const SelectCategory: React.FC<SelectCategoryProps> = ({
     const fetchCategories = async () => {
       try {
         const response = await fetchAllCategories();
+
         setCategories(response.categories);
       } catch (error) {
         console.error("Error fetching categories:", error);
