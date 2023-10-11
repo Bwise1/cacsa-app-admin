@@ -1,4 +1,4 @@
-import { AudioInfo } from "@/types";
+import { AddLocationPayload, AudioInfo } from "@/types";
 import { API_ENDPOINTS } from "./endpoints";
 import { ApiResponse } from "@/types";
 
@@ -107,6 +107,46 @@ export const loginUser = async (credentials: {
     } else {
       throw new Error("Login failed");
     }
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const fetchAllBranches = async () => {
+  try {
+    const response = await fetch(`${serverUrl}${API_ENDPOINTS.BRANCHES}`, {
+      method: "GET",
+    });
+    console.log(response.json);
+    return response.json();
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const fetchAllStates = async () => {
+  try {
+    const response = await fetch(`${serverUrl}${API_ENDPOINTS.STATES}`, {
+      method: "GET",
+    });
+    console.log(response.json);
+    return response.json();
+  } catch (err) {
+    throw err;
+  }
+};
+
+//save location
+export const saveLocations = async (location: AddLocationPayload) => {
+  try {
+    const response = await fetch(`${serverUrl}${API_ENDPOINTS.BRANCHES}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(location),
+    });
+    return response.json();
   } catch (err) {
     throw err;
   }

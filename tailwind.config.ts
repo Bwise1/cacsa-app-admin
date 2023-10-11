@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+const plugin = require("tailwindcss/plugin");
 
 const config: Config = {
   content: [
@@ -15,9 +16,24 @@ const config: Config = {
         green: "#00A551",
         blue: "#0864B7",
         red: "#FF0000",
+        yellow: "#FFD53A",
+        "ca-black": "#1F1F1F",
+        "light-white": "rgba(255, 255, 255, 0.4)",
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        ".no-scrollbar::-webkit-scrollbar": {
+          display: "none",
+        },
+        ".no-scrollbar": {
+          "-ms-overflow-style": "none",
+          "scrollbar-width": "none",
+        },
+      });
+    }),
+  ],
 };
 export default config;

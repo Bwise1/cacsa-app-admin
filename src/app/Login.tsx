@@ -3,6 +3,11 @@ import React, { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+import Logo from "../../public/cacsa.svg";
+import Thinktech from "../../public/thinktech.png";
+import Image from "next/image";
+import Card from "./_components/Card";
+
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -33,52 +38,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 shadow-md rounded-md">
-        <h2 className="text-2xl font-semibold mb-4">Login</h2>
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="username"
+    <div className="flex min-h-screen bg-black text-white flex-col items-center px-24 py-12 justify-center">
+      <Card>
+        <div className="p-8">
+          <span className="">Welcome!</span>
+          <form onSubmit={handleLogin}>
+            <div className="mb-4">
+              <input
+                className="input-backdrop"
+                type="text"
+                id="username"
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+              />
+            </div>
+            <div className="mb-4">
+              <input
+                className="input-backdrop"
+                type="password"
+                id="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+              />
+            </div>
+            <button
+              className="lg:rounded-lg bg-green flex items-center justify-center lg:h-[54px] lg:w-[434px] w-[280px] h-[30px] lg:mb-4 text-xs lg:text-base mb-2"
+              type="submit"
             >
-              Username
-            </label>
-            <input
-              className="w-full border border-gray-300 px-3 py-2 rounded-sm focus:outline-none focus:border-blue-500"
-              type="text"
-              id="username"
-              name="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-            />
-          </div>
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="password"
-            >
-              Password
-            </label>
-            <input
-              className="w-full border border-gray-300 px-3 py-2 rounded-sm focus:outline-none focus:border-blue-500"
-              type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-            />
-          </div>
-          <button
-            className="w-full bg-blue-500 text-white bg-green py-2 rounded-sm hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
-            type="submit"
-          >
-            Log In
-          </button>
-        </form>
-      </div>
+              Log In
+            </button>
+          </form>
+        </div>
+      </Card>
     </div>
   );
 }

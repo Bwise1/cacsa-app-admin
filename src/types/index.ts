@@ -23,7 +23,32 @@ export interface Category {
   name: string;
 }
 
+export interface Location {
+  id: number;
+  name: string;
+  state_id: number;
+  address: string;
+  location: {
+    x: number;
+    y: number;
+  };
+  type: string;
+  website: string;
+  phone: string;
+  is_HQ: number;
+}
+
 export type ApiResponse = {
   status: string;
   link: string;
+};
+
+export type AddLocationPayload = {
+  name: string;
+  stateId: number | null;
+  address: string;
+  type: string;
+  website: string;
+  phone: string;
+  isHQ: string;
 };

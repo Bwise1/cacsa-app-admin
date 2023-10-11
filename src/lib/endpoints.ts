@@ -4,4 +4,6 @@ export const API_ENDPOINTS = {
   AUDIO: "audio/",
   CATEGORY: "category",
   AUTH: "auth",
+  BRANCHES: "branch",
+  STATES: "state",
 };
