@@ -18,6 +18,7 @@ const config: Config = {
         red: "#FF0000",
         yellow: "#FFD53A",
         "ca-black": "#1F1F1F",
+        "ca-grey": "#313131",
         "light-white": "rgba(255, 255, 255, 0.4)",
       },
     },

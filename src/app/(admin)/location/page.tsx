@@ -5,7 +5,7 @@ import React, { FormEvent, useEffect, useState } from "react";
 import { PiChurch } from "react-icons/pi";
 import { BiLocationPlus, BiSearch } from "react-icons/bi";
 import Modal from "@/app/_components/Modal";
-import { fetchAllBranches, saveLocations } from "@/lib/actions";
+import { fetchAllBranches, saveLocations, deleteLocation } from "@/lib/actions";
 import SelectState from "./selectState";
 import { AddLocationPayload } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
@@ -61,6 +61,21 @@ const Location = () => {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      if (selectedRow !== null) {
+        const response = await deleteLocation(selectedRow);
+        console.log(response);
+        if (response == 204) {
+          toast.success("deleted successfully");
+          const updatedLocations = locations.filter(
+            (location) => location.id !== selectedRow
+          );
+          setLocations(updatedLocations);
+        }
+      }
+    } catch {}
+  };
   interface Location {
     id: number;
     name: string;
@@ -182,7 +197,17 @@ const Location = () => {
                 onClick={handleClick}
                 className="bg-green text-sm "
               />
-              <span>Edit</span>
+              <Button
+                label={"Edit"}
+                onClick={() => {}}
+                className="bg-ca-grey"
+              />
+              <Button
+                label={"Delete"}
+                disabled={selectedRow == null}
+                className="bg-red"
+                onClick={handleDelete}
+              />
             </div>
             <div>
               <table className=" w-full ">

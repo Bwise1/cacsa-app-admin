@@ -151,3 +151,23 @@ export const saveLocations = async (location: AddLocationPayload) => {
     throw err;
   }
 };
+
+//delete
+export const deleteLocation = async (branchId: number) => {
+  try {
+    const response = await fetch(
+      `${serverUrl}${API_ENDPOINTS.BRANCHES}/${branchId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(location),
+      }
+    );
+    console.log(response);
+    return response.status;
+  } catch (err) {
+    throw err;
+  }
+};
