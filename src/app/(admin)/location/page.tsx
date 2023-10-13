@@ -33,10 +33,9 @@ const Location = () => {
     if (
       locationInfo.address == "" ||
       locationInfo.name == "" ||
-      locationInfo.phone == "" ||
       locationInfo.isHQ == "" ||
+      locationInfo.phone == "" ||
       locationInfo.type == "" ||
-      locationInfo.website == "" ||
       locationInfo.stateId == null
     ) {
       toast.error("Please check that all fields are filled");
@@ -136,7 +135,7 @@ const Location = () => {
   };
 
   return (
-    <div className="flex h-full flex-col gap-8 w-full">
+    <div className="flex h-full  flex-col gap-8 w-full">
       <Toaster />
       {/* Start of Top Small Cards */}
       <div className="flex gap-4   ">
@@ -177,9 +176,9 @@ const Location = () => {
       {/* End of Top Small Cards */}
 
       {/* Start of Bottom Card */}
-      <div className="w-full h-full ">
+      <div className="w-full h-full">
         <Card>
-          <div className="p-12 w-full overflow-y-scroll no-scrollbar">
+          <div className="p-12 w-full   overflow-y-scroll no-scrollbar">
             <div className="flex gap-4 w-full">
               <span className="relative top-icons w-2/5 flex">
                 <span className="absolute inset-0 flex items-center left-6  w-min">
