@@ -135,7 +135,7 @@ const Location = () => {
   };
 
   return (
-    <div className="flex h-full  flex-col gap-8 w-full">
+    <div className="flex h-full  flex-col gap-8 w-full overflow-hidden ">
       <Toaster />
       {/* Start of Top Small Cards */}
       <div className="flex gap-4   ">
@@ -176,10 +176,10 @@ const Location = () => {
       {/* End of Top Small Cards */}
 
       {/* Start of Bottom Card */}
-      <div className="w-full h-full">
+      <div className="w-full h-full py-2 ">
         <Card>
-          <div className="p-12 w-full   overflow-y-scroll no-scrollbar">
-            <div className="flex gap-4 w-full">
+          <div className="p-12 w-full h-full overflow-hidden ">
+            <div className="flex gap-4  w-full">
               <span className="relative top-icons w-2/5 flex">
                 <span className="absolute inset-0 flex items-center left-6  w-min">
                   <BiSearch className="h-5 w-5" />
@@ -209,8 +209,8 @@ const Location = () => {
                 onClick={handleDelete}
               />
             </div>
-            <div>
-              <table className=" w-full ">
+            <div className="w-full h-full overflow-y-scroll mb-4  mt-7 grid">
+              <table className="py-3 ">
                 <thead>
                   <tr className="text-left">
                     <th className=" p-2">Title</th>
