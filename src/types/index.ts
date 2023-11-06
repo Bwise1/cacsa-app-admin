@@ -49,6 +49,8 @@ export type AddLocationPayload = {
   address: string;
   type: string;
   website: string;
+  longitude: number | null;
+  latitude: number | null;
   phone: string;
   isHQ: string;
 };

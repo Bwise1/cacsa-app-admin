@@ -1,6 +1,7 @@
 import { AddLocationPayload, AudioInfo } from "@/types";
 import { API_ENDPOINTS } from "./endpoints";
 import { ApiResponse } from "@/types";
+import { authenticatedRequest } from "./api"; // Import the custom function
 
 const serverUrl = process.env.NEXT_PUBLIC_REST_API_ENDPOINT;
 
@@ -137,36 +138,81 @@ export const fetchAllStates = async () => {
 };
 
 //save location
+// export const saveLocations = async (location: AddLocationPayload) => {
+//   try {
+//     const response = await fetch(`${serverUrl}${API_ENDPOINTS.BRANCHES}`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${token}`,
+//       },
+//       body: JSON.stringify(location),
+//     });
+//     return response.json();
+//   } catch (err) {
+//     throw err;
+//   }
+// };
+
 export const saveLocations = async (location: AddLocationPayload) => {
   try {
-    const response = await fetch(`${serverUrl}${API_ENDPOINTS.BRANCHES}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(location),
-    });
-    return response.json();
+    // Use the authenticatedRequest function to make the API call
+    const response = await authenticatedRequest(
+      `${serverUrl}${API_ENDPOINTS.BRANCHES}`,
+      "POST",
+      location
+    );
+    return response;
   } catch (err) {
     throw err;
   }
 };
 
 //delete
+// export const deleteLocation = async (branchId: number) => {
+//   try {
+//     const response = await fetch(
+//       `${serverUrl}${API_ENDPOINTS.BRANCHES}/${branchId}`,
+//       {
+//         method: "DELETE",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(location),
+//       }
+//     );
+//     console.log(response);
+//     return response.status;
+//   } catch (err) {
+//     throw err;
+//   }
+// };
+
 export const deleteLocation = async (branchId: number) => {
   try {
-    const response = await fetch(
+    const response = await authenticatedRequest<number>(
       `${serverUrl}${API_ENDPOINTS.BRANCHES}/${branchId}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(location),
-      }
+      "DELETE"
     );
-    console.log(response);
-    return response.status;
+    return response; // Return the response status directly
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const editLocation = async (
+  branchId: number,
+  location: AddLocationPayload
+) => {
+  try {
+    // Use the authenticatedRequest function to make the API call
+    const response = await authenticatedRequest(
+      `${serverUrl}${API_ENDPOINTS.BRANCHES}/${branchId}`, // Include the branchId in the URL
+      "PUT", // Use the PUT method for updates
+      location // Send the location data in the request body
+    );
+
+    return response;
   } catch (err) {
     throw err;
   }

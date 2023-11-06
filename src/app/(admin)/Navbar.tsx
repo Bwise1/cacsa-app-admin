@@ -37,6 +37,17 @@ const Navbar: React.FC = () => {
           <BiLocationPlus className="" />
           <span>Location</span>
         </Link>
+        <Link
+          className={`inline-flex px-10 py-2 rounded-md items-center gap-4 ${
+            pathname.includes("/users")
+              ? "bg-green"
+              : " hover:bg-green hover:opacity-60"
+          }`}
+          href={"users"}
+        >
+          <BiLocationPlus className="" />
+          <span>Users</span>
+        </Link>
       </div>
       <div className="flex flex-col gap-2">
         <div className="border-b border-white mx-10"></div>

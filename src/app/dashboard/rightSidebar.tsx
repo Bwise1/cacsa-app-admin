@@ -6,6 +6,7 @@ import Thinktech from "../../../public/thinktech.png";
 
 const RightSideBar: React.FC = async () => {
   const session = await getServerSession(authOptions);
+
   return (
     <div className="w-[247px] h-full bg-black relative rounded-[10px] flex items-center 2xl:gap-16  gap-12 flex-col 2xl:py-24 py-16 overflow-hidden">
       <div className="flex flex-col items-center justify-center gap-2">

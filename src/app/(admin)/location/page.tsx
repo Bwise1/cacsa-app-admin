@@ -6,7 +6,13 @@ import { PiChurch } from "react-icons/pi";
 import { BiLocationPlus, BiSearch } from "react-icons/bi";
 
 import Modal from "@/app/_components/Modal";
-import { fetchAllBranches, saveLocations, deleteLocation } from "@/lib/actions";
+import {
+  fetchAllBranches,
+  saveLocations,
+  deleteLocation,
+  fetchAllStates,
+  editLocation,
+} from "@/lib/actions";
 import SelectState from "./selectState";
 import { AddLocationPayload } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
@@ -15,13 +21,38 @@ const Location = () => {
   const [openModal, setOpenModal] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingMode, seteditingMode] = useState(false);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const [stateMapping, setStateMapping] = useState<StateMapping>({});
 
   const handleClick = () => {
     setOpenModal(true);
   };
+
+  const handleEditClick = () => {
+    if (selectedRow !== null) {
+      const selectedLocation = locations.find(
+        (location) => location.id === selectedRow
+      );
+      console.log(selectedLocation);
+      seteditingMode(true);
+      setLocationInfo({
+        name: selectedLocation?.name || "",
+        stateId: selectedLocation?.state_id || null,
+        address: selectedLocation?.address || "",
+        type: selectedLocation?.type || "",
+        website: selectedLocation?.website || "",
+        longitude: selectedLocation?.location.x || 0,
+        latitude: selectedLocation?.location.y || 0,
+        phone: selectedLocation?.phone || "",
+        isHQ: (selectedLocation?.is_HQ ? "true" : "false") || "false",
+      });
+      setOpenModal(true);
+    }
+  };
   const handleOnClose = () => {
     setOpenModal(false);
+    seteditingMode(false);
   };
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
@@ -42,15 +73,31 @@ const Location = () => {
     } else {
       setIsSubmitting(true);
       try {
-        const response = await saveLocations(locationInfo);
-        if (response.status === "success") {
-          console.log("Saved successfully");
-          setLocationInfo(initialLocationInfo);
-          // Show success toast
-          setOpenModal(false);
-          toast.success("Location details saved successfully");
+        if (editingMode) {
+          console.info("hello", locationInfo);
+          const response = await editLocation(selectedRow!, locationInfo);
+          console.log(response);
+          if (response) {
+            console.log("edited successfully");
+            setLocationInfo(initialLocationInfo);
+            // Show success toast
+            setOpenModal(false);
+            toast.success("Location details Edited successfully");
+          } else {
+            // Show error toast
+          }
         } else {
-          // Show error toast
+          const response = await saveLocations(locationInfo);
+          console.log(response);
+          if (response) {
+            console.log("Saved successfully");
+            setLocationInfo(initialLocationInfo);
+            // Show success toast
+            // setOpenModal(false);
+            toast.success("Location details saved successfully");
+          } else {
+            // Show error toast
+          }
         }
       } catch (error) {
         // Handle error and show error toast
@@ -65,8 +112,8 @@ const Location = () => {
     try {
       if (selectedRow !== null) {
         const response = await deleteLocation(selectedRow);
-        console.log(response);
-        if (response == 204) {
+        console.log("my rensponse is: ", response);
+        if (response == null) {
           toast.success("deleted successfully");
           const updatedLocations = locations.filter(
             (location) => location.id !== selectedRow
@@ -85,6 +132,14 @@ const Location = () => {
     website: string;
     phone: string;
     is_HQ: number;
+    location: {
+      x: number;
+      y: number;
+    };
+  }
+
+  interface StateMapping {
+    [key: number]: string;
   }
 
   //fetch locations
@@ -92,13 +147,33 @@ const Location = () => {
     const fetchLocations = async () => {
       try {
         const response = await fetchAllBranches();
-        console.log(response.branches);
         setLocations(response.branches);
+        console.log(locations);
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
     };
 
+    const fetchStates = async () => {
+      try {
+        const stateData = await fetchAllStates(); // Replace with your API call
+        const mapping = stateData.states.reduce(
+          (
+            map: { [x: string]: any },
+            state: { id: string | number; state_name: any }
+          ) => {
+            map[state.id] = state.state_name;
+            return map;
+          },
+          {}
+        );
+        setStateMapping(mapping);
+      } catch (error) {
+        console.error("Error fetching state mapping data:", error);
+      }
+    };
+
+    fetchStates();
     fetchLocations();
   }, []);
 
@@ -108,6 +183,8 @@ const Location = () => {
     address: "",
     type: "",
     website: "",
+    longitude: null,
+    latitude: null,
     phone: "",
     isHQ: "false",
   };
@@ -115,17 +192,23 @@ const Location = () => {
     useState<AddLocationPayload>(initialLocationInfo);
   const [submitting, setSubmitting] = useState(false);
 
+  //input change
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ): void => {
     console.log("target", event.target.value);
     const { id, value } = event.target;
 
-    let updatedValue: string | number | boolean = value; // Default to the provided value
+    let updatedValue: string | number | null = null; // Default to null for invalid input
 
-    // Check if id is 'state_id', convert value to a number
-    if (id === "stateId") {
-      updatedValue = parseFloat(value);
+    // Check if id is 'stateId', 'longitude', or 'latitude', convert value to a number
+    if (id === "stateId" || id === "longitude" || id === "latitude") {
+      const floatValue = parseFloat(value);
+      if (!isNaN(floatValue)) {
+        updatedValue = floatValue;
+      }
+    } else {
+      updatedValue = value; // For other fields, keep the provided value
     }
 
     setLocationInfo((prevLocationInfo) => ({
@@ -199,7 +282,7 @@ const Location = () => {
               />
               <Button
                 label={"Edit"}
-                onClick={() => {}}
+                onClick={handleEditClick}
                 className="bg-ca-grey"
               />
               <Button
@@ -230,7 +313,9 @@ const Location = () => {
                     >
                       <td className=" p-2">{location.name}</td>
                       <td className="truncate p-2 flex">{location.address}</td>
-                      <td className=" p-2 ">{location.state_id}</td>
+                      <td className=" p-2 ">
+                        {stateMapping[location.state_id] || "Unknown State"}
+                      </td>
                       <td className=" p-2">{location.type}</td>
                     </tr>
                   ))}
@@ -259,6 +344,7 @@ const Location = () => {
           {/* <input type="text" placeholder="State" className="input-modal" /> */}
           <SelectState
             value={locationInfo.stateId}
+            selectedState={3}
             id="stateId"
             onChange={handleInputChange}
           />
@@ -282,24 +368,50 @@ const Location = () => {
             <option value="Higher Institution">Higher Institution</option>
             <option value="State Branch">State Branch</option>
           </select>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              id="longitude"
+              placeholder="Longitude"
+              className="input-modal"
+              step="any"
+              value={
+                locationInfo.longitude === null ? "" : locationInfo.longitude
+              }
+              onChange={handleInputChange}
+            />
 
-          <input
-            type="text"
-            id="website"
-            placeholder="website"
-            className="input-modal"
-            value={locationInfo.website}
-            onChange={handleInputChange}
-          />
+            <input
+              type="number"
+              id="latitude"
+              placeholder="Latitude"
+              className="input-modal"
+              step="any"
+              value={
+                locationInfo.latitude === null ? "" : locationInfo.latitude
+              }
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              id="website"
+              placeholder="website"
+              className="input-modal"
+              value={locationInfo.website}
+              onChange={handleInputChange}
+            />
 
-          <input
-            type="text"
-            id="phone"
-            placeholder="phone"
-            className="input-modal"
-            value={locationInfo.phone}
-            onChange={handleInputChange}
-          />
+            <input
+              type="text"
+              id="phone"
+              placeholder="phone"
+              className="input-modal"
+              value={locationInfo.phone}
+              onChange={handleInputChange}
+            />
+          </div>
 
           <select
             id="isHQ"
@@ -314,7 +426,7 @@ const Location = () => {
             <option value="false">False</option>
           </select>
           <Button
-            label={"Save Location"}
+            label={editingMode ? "Update Location" : "Save Location"}
             type="submit"
             icon={<BiLocationPlus className="w-4 h-4" />}
             className="bg-green text-sm w-44"
