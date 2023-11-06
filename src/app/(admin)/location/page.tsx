@@ -344,7 +344,6 @@ const Location = () => {
           {/* <input type="text" placeholder="State" className="input-modal" /> */}
           <SelectState
             value={locationInfo.stateId}
-            selectedState={3}
             id="stateId"
             onChange={handleInputChange}
           />

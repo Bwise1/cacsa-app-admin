@@ -9,24 +9,18 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
   valueKey: string;
   labelKey: string;
-  selectedState: number;
 }
 
 const Select: React.FC<SelectProps> = ({
   options,
   placeholder,
   valueKey,
-  selectedState,
   labelKey,
   ...rest
 }) => {
   return (
     <div className="">
-      <select
-        className="input-modal text-white appearance-none"
-        {...rest}
-        value={selectedState}
-      >
+      <select className="input-modal text-white appearance-none" {...rest}>
         {placeholder && (
           <option value="" disabled>
             {placeholder}
