@@ -4,10 +4,6 @@ import Card from "@/app/_components/Card";
 import React, { FormEvent, useEffect, useState } from "react";
 import { PiChurch } from "react-icons/pi";
 import { BiLocationPlus, BiSearch } from "react-icons/bi";
-import { getAllUsers } from "@/lib/firebase";
-
-import Modal from "@/app/_components/Modal";
-import { fetchAllBranches, saveLocations, deleteLocation } from "@/lib/actions";
 
 import toast, { Toaster } from "react-hot-toast";
 
@@ -21,8 +17,6 @@ const Location = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await getAllUsers();
-        console.log(response.length);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
