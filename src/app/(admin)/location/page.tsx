@@ -147,6 +147,7 @@ const Location = () => {
     const fetchLocations = async () => {
       try {
         const response = await fetchAllBranches();
+
         setLocations(response.branches);
         console.log(locations);
       } catch (error) {
@@ -218,10 +219,10 @@ const Location = () => {
   };
 
   return (
-    <div className="flex h-full  flex-col gap-8 w-full overflow-hidden ">
+    <div className="h-full gap-8 w-full flex flex-col justify-between ">
       <Toaster />
       {/* Start of Top Small Cards */}
-      <div className="flex gap-4   ">
+      <div className="flex gap-4  ">
         <Card>
           <div className="w-[190px] h-[137px]  flex flex-row text-3xl items-center justify-center gap-5">
             <span className=" text-yellow">
@@ -259,71 +260,69 @@ const Location = () => {
       {/* End of Top Small Cards */}
 
       {/* Start of Bottom Card */}
-      <div className="w-full h-full py-2 ">
-        <Card>
-          <div className="p-12 w-full h-full overflow-hidden ">
-            <div className="flex gap-4  w-full">
-              <span className="relative top-icons w-2/5 flex">
-                <span className="absolute inset-0 flex items-center left-6  w-min">
-                  <BiSearch className="h-5 w-5" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="appearance-none bg-transparent"
-                />
-              </span>
+      <div className="w-full overflow-scroll px-12 py-8 rounded-[5px] border border-green bg-ca-black self-center h-full flex flex-col gap-4">
+        <div className="flex gap-4  w-full ">
+          <span className="relative top-icons w-2/5 flex">
+            <span className="absolute inset-0 flex items-center left-6  w-min">
+              <BiSearch className="h-5 w-5" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search"
+              className="appearance-none bg-transparent"
+            />
+          </span>
 
-              <span>All</span>
-              <Button
-                label={"Upload Location"}
-                onClick={handleClick}
-                className="bg-green text-sm "
-              />
-              <Button
-                label={"Edit"}
-                onClick={handleEditClick}
-                className="bg-ca-grey"
-              />
-              <Button
-                label={"Delete"}
-                disabled={selectedRow == null}
-                className="bg-red"
-                onClick={handleDelete}
-              />
-            </div>
-            <div className="w-full h-full overflow-y-scroll mb-4  mt-7 grid">
-              <table className="py-3 ">
-                <thead>
-                  <tr className="text-left">
-                    <th className=" p-2">Title</th>
-                    <th className=" p-2">Address</th>
-                    <th className=" p-2">State</th>
-                    <th className=" p-2">Category</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {locations.map((location) => (
-                    <tr
-                      key={location.id}
-                      className={`w-full ${
-                        selectedRow === location.id ? "bg-green" : ""
-                      }`}
-                      onClick={() => setSelectedRow(location.id)}
-                    >
-                      <td className=" p-2">{location.name}</td>
-                      <td className="truncate p-2 flex">{location.address}</td>
-                      <td className=" p-2 ">
-                        {stateMapping[location.state_id] || "Unknown State"}
-                      </td>
-                      <td className=" p-2">{location.type}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </Card>
+          <span>All</span>
+          <Button
+            label={"Upload Location"}
+            onClick={handleClick}
+            className="bg-green text-sm "
+          />
+          <Button
+            label={"Edit"}
+            onClick={handleEditClick}
+            className="bg-ca-grey"
+          />
+          <Button
+            label={"Delete"}
+            disabled={selectedRow == null}
+            className="bg-red"
+            onClick={handleDelete}
+          />
+        </div>
+        <div className="w-full h-full overflow-y-scroll   ">
+          <table className="py-3 ">
+            <thead>
+              <tr className="text-left grid grid-cols-7 gap-3">
+                <th className="col-span-2 p-2">Title</th>
+                <th className="col-span-3 p-2">Address</th>
+                <th className=" p-2">State</th>
+                <th className=" p-2">Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {locations.map((location) => (
+                <tr
+                  key={location.id}
+                  className={`w-full h-8  grid grid-cols-7 gap-3 ${
+                    selectedRow === location.id ? "bg-green" : ""
+                  }`}
+                  onClick={() => setSelectedRow(location.id)}
+                >
+                  <td className=" truncate col-span-2  p-2">{location.name}</td>
+                  <td className="truncate col-span-3 p-2 ">
+                    {location.address}
+                  </td>
+                  <td className="truncate p-2 ">
+                    {stateMapping[location.state_id] || "Unknown State"}
+                  </td>
+                  <td className="truncate p-2">{location.type}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
       {/* End of Bottom Card */}
 
