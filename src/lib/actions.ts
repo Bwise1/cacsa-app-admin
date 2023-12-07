@@ -135,6 +135,17 @@ export const fetchAllStates = async () => {
     throw err;
   }
 };
+export const fetchAllAudio = async () => {
+  try {
+    const response = await fetch(`${serverUrl}${API_ENDPOINTS.AUDIO}`, {
+      method: "GET",
+    });
+    console.log(response.json);
+    return response.json();
+  } catch (err) {
+    throw err;
+  }
+};
 
 //save location
 export const saveLocations = async (location: AddLocationPayload) => {
