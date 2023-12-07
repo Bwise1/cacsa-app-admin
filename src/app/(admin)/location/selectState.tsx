@@ -20,14 +20,16 @@ const SelectState: React.FC<SelectStateProps> = ({ onChange, id }) => {
   if (!data) {
     return null;
   }
-  console.log(data.states);
+  // console.log(data.states);
   return (
     <div>
       <Select
         id={id}
-        options={data.states}
+        options={[
+          { id: "", state_name: "---Select State---", isDisabled: true },
+          ...data.states,
+        ]}
         valueKey="id"
-        placeholder="---Select State---"
         labelKey="state_name"
         onChange={onChange}
       />

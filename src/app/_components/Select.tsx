@@ -5,7 +5,7 @@ interface Option {
 }
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  options: Option[];
+  options: (Option & { isDisabled?: boolean })[]; // Add isDisabled to options
   placeholder?: string;
   valueKey: string;
   labelKey: string;
@@ -27,7 +27,11 @@ const Select: React.FC<SelectProps> = ({
           </option>
         )}
         {options.map((option) => (
-          <option key={option[valueKey]} value={option[valueKey]}>
+          <option
+            key={option[valueKey]}
+            value={option[valueKey]}
+            disabled={option.isDisabled || false} // Set disabled attribute based on isDisabled property
+          >
             {option[labelKey]}
           </option>
         ))}

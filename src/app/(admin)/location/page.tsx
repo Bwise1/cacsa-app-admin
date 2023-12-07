@@ -6,7 +6,13 @@ import { PiChurch } from "react-icons/pi";
 import { BiLocationPlus, BiSearch } from "react-icons/bi";
 
 import Modal from "@/app/_components/Modal";
-import { fetchAllBranches, saveLocations, deleteLocation } from "@/lib/actions";
+import {
+  fetchAllBranches,
+  saveLocations,
+  deleteLocation,
+  fetchAllStates,
+  editLocation,
+} from "@/lib/actions";
 import SelectState from "./selectState";
 import { AddLocationPayload } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
@@ -15,13 +21,38 @@ const Location = () => {
   const [openModal, setOpenModal] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingMode, seteditingMode] = useState(false);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const [stateMapping, setStateMapping] = useState<StateMapping>({});
 
   const handleClick = () => {
     setOpenModal(true);
   };
+
+  const handleEditClick = () => {
+    if (selectedRow !== null) {
+      const selectedLocation = locations.find(
+        (location) => location.id === selectedRow
+      );
+      console.log(selectedLocation);
+      seteditingMode(true);
+      setLocationInfo({
+        name: selectedLocation?.name || "",
+        stateId: selectedLocation?.state_id || null,
+        address: selectedLocation?.address || "",
+        type: selectedLocation?.type || "",
+        website: selectedLocation?.website || "",
+        longitude: selectedLocation?.location.x || 0,
+        latitude: selectedLocation?.location.y || 0,
+        phone: selectedLocation?.phone || "",
+        isHQ: (selectedLocation?.is_HQ ? "true" : "false") || "false",
+      });
+      setOpenModal(true);
+    }
+  };
   const handleOnClose = () => {
     setOpenModal(false);
+    seteditingMode(false);
   };
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
@@ -42,15 +73,31 @@ const Location = () => {
     } else {
       setIsSubmitting(true);
       try {
-        const response = await saveLocations(locationInfo);
-        if (response.status === "success") {
-          console.log("Saved successfully");
-          setLocationInfo(initialLocationInfo);
-          // Show success toast
-          setOpenModal(false);
-          toast.success("Location details saved successfully");
+        if (editingMode) {
+          console.info("hello", locationInfo);
+          const response = await editLocation(selectedRow!, locationInfo);
+          console.log(response);
+          if (response) {
+            console.log("edited successfully");
+            setLocationInfo(initialLocationInfo);
+            // Show success toast
+            setOpenModal(false);
+            toast.success("Location details Edited successfully");
+          } else {
+            // Show error toast
+          }
         } else {
-          // Show error toast
+          const response = await saveLocations(locationInfo);
+          console.log(response);
+          if (response) {
+            console.log("Saved successfully");
+            setLocationInfo(initialLocationInfo);
+            // Show success toast
+            // setOpenModal(false);
+            toast.success("Location details saved successfully");
+          } else {
+            // Show error toast
+          }
         }
       } catch (error) {
         // Handle error and show error toast
@@ -65,8 +112,8 @@ const Location = () => {
     try {
       if (selectedRow !== null) {
         const response = await deleteLocation(selectedRow);
-        console.log(response);
-        if (response == 204) {
+        console.log("my rensponse is: ", response);
+        if (response == null) {
           toast.success("deleted successfully");
           const updatedLocations = locations.filter(
             (location) => location.id !== selectedRow
@@ -85,6 +132,14 @@ const Location = () => {
     website: string;
     phone: string;
     is_HQ: number;
+    location: {
+      x: number;
+      y: number;
+    };
+  }
+
+  interface StateMapping {
+    [key: number]: string;
   }
 
   //fetch locations
@@ -92,13 +147,34 @@ const Location = () => {
     const fetchLocations = async () => {
       try {
         const response = await fetchAllBranches();
-        console.log(response.branches);
+
         setLocations(response.branches);
+        console.log(locations);
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
     };
 
+    const fetchStates = async () => {
+      try {
+        const stateData = await fetchAllStates(); // Replace with your API call
+        const mapping = stateData.states.reduce(
+          (
+            map: { [x: string]: any },
+            state: { id: string | number; state_name: any }
+          ) => {
+            map[state.id] = state.state_name;
+            return map;
+          },
+          {}
+        );
+        setStateMapping(mapping);
+      } catch (error) {
+        console.error("Error fetching state mapping data:", error);
+      }
+    };
+
+    fetchStates();
     fetchLocations();
   }, []);
 
@@ -108,6 +184,8 @@ const Location = () => {
     address: "",
     type: "",
     website: "",
+    longitude: null,
+    latitude: null,
     phone: "",
     isHQ: "false",
   };
@@ -115,17 +193,23 @@ const Location = () => {
     useState<AddLocationPayload>(initialLocationInfo);
   const [submitting, setSubmitting] = useState(false);
 
+  //input change
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ): void => {
     console.log("target", event.target.value);
     const { id, value } = event.target;
 
-    let updatedValue: string | number | boolean = value; // Default to the provided value
+    let updatedValue: string | number | null = null; // Default to null for invalid input
 
-    // Check if id is 'state_id', convert value to a number
-    if (id === "stateId") {
-      updatedValue = parseFloat(value);
+    // Check if id is 'stateId', 'longitude', or 'latitude', convert value to a number
+    if (id === "stateId" || id === "longitude" || id === "latitude") {
+      const floatValue = parseFloat(value);
+      if (!isNaN(floatValue)) {
+        updatedValue = floatValue;
+      }
+    } else {
+      updatedValue = value; // For other fields, keep the provided value
     }
 
     setLocationInfo((prevLocationInfo) => ({
@@ -135,10 +219,10 @@ const Location = () => {
   };
 
   return (
-    <div className="flex h-full  flex-col gap-8 w-full overflow-hidden ">
+    <div className="h-full gap-8 w-full flex flex-col justify-between ">
       <Toaster />
       {/* Start of Top Small Cards */}
-      <div className="flex gap-4   ">
+      <div className="flex gap-4  ">
         <Card>
           <div className="w-[190px] h-[137px]  flex flex-row text-3xl items-center justify-center gap-5">
             <span className=" text-yellow">
@@ -176,69 +260,69 @@ const Location = () => {
       {/* End of Top Small Cards */}
 
       {/* Start of Bottom Card */}
-      <div className="w-full h-full py-2 ">
-        <Card>
-          <div className="p-12 w-full h-full overflow-hidden ">
-            <div className="flex gap-4  w-full">
-              <span className="relative top-icons w-2/5 flex">
-                <span className="absolute inset-0 flex items-center left-6  w-min">
-                  <BiSearch className="h-5 w-5" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="appearance-none bg-transparent"
-                />
-              </span>
+      <div className="w-full overflow-scroll px-12 py-8 rounded-[5px] border border-green bg-ca-black self-center h-full flex flex-col gap-4">
+        <div className="flex gap-4  w-full ">
+          <span className="relative top-icons w-2/5 flex">
+            <span className="absolute inset-0 flex items-center left-6  w-min">
+              <BiSearch className="h-5 w-5" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search"
+              className="appearance-none bg-transparent"
+            />
+          </span>
 
-              <span>All</span>
-              <Button
-                label={"Upload Location"}
-                onClick={handleClick}
-                className="bg-green text-sm "
-              />
-              <Button
-                label={"Edit"}
-                onClick={() => {}}
-                className="bg-ca-grey"
-              />
-              <Button
-                label={"Delete"}
-                disabled={selectedRow == null}
-                className="bg-red"
-                onClick={handleDelete}
-              />
-            </div>
-            <div className="w-full h-full overflow-y-scroll mb-4  mt-7 grid">
-              <table className="py-3 ">
-                <thead>
-                  <tr className="text-left">
-                    <th className=" p-2">Title</th>
-                    <th className=" p-2">Address</th>
-                    <th className=" p-2">State</th>
-                    <th className=" p-2">Category</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {locations.map((location) => (
-                    <tr
-                      key={location.id}
-                      className={`w-full ${
-                        selectedRow === location.id ? "bg-green" : ""
-                      }`}
-                      onClick={() => setSelectedRow(location.id)}
-                    >
-                      <td className=" p-2">{location.name}</td>
-                      <td className="truncate p-2 flex">{location.address}</td>
-                      <td className=" p-2 ">{location.state_id}</td>
-                      <td className=" p-2">{location.type}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </Card>
+          <span>All</span>
+          <Button
+            label={"Upload Location"}
+            onClick={handleClick}
+            className="bg-green text-sm "
+          />
+          <Button
+            label={"Edit"}
+            onClick={handleEditClick}
+            className="bg-ca-grey"
+          />
+          <Button
+            label={"Delete"}
+            disabled={selectedRow == null}
+            className="bg-red"
+            onClick={handleDelete}
+          />
+        </div>
+        <div className="w-full h-full overflow-y-scroll   ">
+          <table className="py-3 ">
+            <thead>
+              <tr className="text-left grid grid-cols-7 gap-3">
+                <th className="col-span-2 p-2">Title</th>
+                <th className="col-span-3 p-2">Address</th>
+                <th className=" p-2">State</th>
+                <th className=" p-2">Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {locations.map((location) => (
+                <tr
+                  key={location.id}
+                  className={`w-full h-8  grid grid-cols-7 gap-3 ${
+                    selectedRow === location.id ? "bg-green" : ""
+                  }`}
+                  onClick={() => setSelectedRow(location.id)}
+                >
+                  <td className=" truncate col-span-2  p-2">{location.name}</td>
+                  <td className="truncate col-span-3 p-2 ">
+                    {location.address}
+                  </td>
+                  <td className="truncate p-2 ">
+                    {stateMapping[location.state_id] || "Unknown State"}
+                  </td>
+                  <td className="truncate p-2">{location.type}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
       {/* End of Bottom Card */}
 
@@ -282,24 +366,50 @@ const Location = () => {
             <option value="Higher Institution">Higher Institution</option>
             <option value="State Branch">State Branch</option>
           </select>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              id="longitude"
+              placeholder="Longitude"
+              className="input-modal"
+              step="any"
+              value={
+                locationInfo.longitude === null ? "" : locationInfo.longitude
+              }
+              onChange={handleInputChange}
+            />
 
-          <input
-            type="text"
-            id="website"
-            placeholder="website"
-            className="input-modal"
-            value={locationInfo.website}
-            onChange={handleInputChange}
-          />
+            <input
+              type="number"
+              id="latitude"
+              placeholder="Latitude"
+              className="input-modal"
+              step="any"
+              value={
+                locationInfo.latitude === null ? "" : locationInfo.latitude
+              }
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              id="website"
+              placeholder="website"
+              className="input-modal"
+              value={locationInfo.website}
+              onChange={handleInputChange}
+            />
 
-          <input
-            type="text"
-            id="phone"
-            placeholder="phone"
-            className="input-modal"
-            value={locationInfo.phone}
-            onChange={handleInputChange}
-          />
+            <input
+              type="text"
+              id="phone"
+              placeholder="phone"
+              className="input-modal"
+              value={locationInfo.phone}
+              onChange={handleInputChange}
+            />
+          </div>
 
           <select
             id="isHQ"
@@ -314,7 +424,7 @@ const Location = () => {
             <option value="false">False</option>
           </select>
           <Button
-            label={"Save Location"}
+            label={editingMode ? "Update Location" : "Save Location"}
             type="submit"
             icon={<BiLocationPlus className="w-4 h-4" />}
             className="bg-green text-sm w-44"
