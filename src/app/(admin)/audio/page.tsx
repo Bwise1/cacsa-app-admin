@@ -9,7 +9,7 @@ import { BiLocationPlus, BiSearch } from "react-icons/bi";
 import Modal from "@/app/_components/Modal";
 import { fetchAllAudio, fetchAllCategories } from "@/lib/actions";
 // import SelectState from "./selectState";
-// import { AddLocationPayload } from "@/types";
+import { AddAudioPayload } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 
@@ -26,42 +26,6 @@ const Location = () => {
   const handleOnClose = () => {
     setOpenModal(false);
   };
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    event.preventDefault(); // Prevent default form submission behavior
-
-    // Start submitting
-    // console.log(audioInfo);
-    // if (
-    //   audioInfo.address == "" ||
-    //   audioInfo.name == "" ||
-    //   audioInfo.isHQ == "" ||
-    //   audioInfo.phone == "" ||
-    //   audioInfo.type == "" ||
-    //   audioInfo.stateId == null
-    // ) {
-    //   toast.error("Please check that all fields are filled");
-    // } else {
-    //   setIsSubmitting(true);
-    //   try {
-    //     const response = await saveLocations(audioInfo);
-    //     if (response.status === "success") {
-    //       console.log("Saved successfully");
-    //       setaudioInfo(initialaudioInfo);
-    //       // Show success toast
-    //       setOpenModal(false);
-    //       toast.success("Location details saved successfully");
-    //     } else {
-    //       // Show error toast
-    //     }
-    //   } catch (error) {
-    //     // Handle error and show error toast
-    //     toast.error("There is an error saving location");
-    //   } finally {
-    //     setIsSubmitting(false); // End submitting, whether success or error
-      // }
-    }
 
   //   const handleDelete = async () => {
   //     try {
@@ -182,6 +146,20 @@ const Location = () => {
 
     fetchAudios();
   }, []);
+
+  const initialAudioInfo: AddAudioPayload = {
+    title: "",
+    description: "",
+    artist: "",
+    date: "",
+    category_id: null,
+    audio_url: "",
+    thumbnail_url: "",
+  };
+
+  const [AudioInfo, setAudioInfo] = useState<AddAudioPayload>(initialAudioInfo);
+
+  // const initialAudioInfo: 
 
   const formatDate = (dateString: string): string => {
     const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: '2-digit' };
@@ -318,7 +296,7 @@ const Location = () => {
               </span>
               <span className="bg-green text-sm flex items-center p-2 rounded-md">
                 <PiMusicNotes className="h-5 w-10" />
-                <Link href="" onClick={handleClick}>Upload Location</Link>
+                <Link href="" onClick={handleClick}>Upload Audio</Link>
               </span>
               <span className="bg-ca-grey text-sm flex items-center p-2 w-24 rounded-md">
                 <PiMusicNote className="h-5 w-10" />
@@ -375,6 +353,139 @@ const Location = () => {
         </Card>
       </div>
       {/* End of Bottom Card */}
+
+      {/* Start of Modal component(opens when you click upload)*/}
+      <Modal isOpen={openModal} onClose={handleOnClose}>
+        <form
+          className="pt-16 w-full flex items-center gap-3"
+          // onSubmit={handleSubmit}
+        >
+          <div className="">
+            <input type="text"
+              id="name"
+              placeholder="Title"
+              className="input-modal my-4 h-8"
+              // onChange={handleInputChange}
+              value={AudioInfo.title}
+            />
+            <input type="text"
+              id="name"
+              placeholder="Music description"
+              className="input-modal my-4 h-8"
+              // onChange={handleInputChange}
+              value={AudioInfo.description}
+            />
+            <input type="text" id="address" placeholder="Artist/Preacher" className="input-modal my-4 h-8"
+              // onChange={handleInputChange}
+              value={AudioInfo.artist}
+            />
+            <input type="text"
+              id="address"
+              placeholder="Duration"
+              className="input-modal my-4 h-8"
+              // onChange={handleInputChange}
+              value={AudioInfo.artist}
+            />
+            <Button type="submit" label="Upload Audio"
+              icon={<PiMusicNotes className="w-4 h-4" />}
+              className="bg-green text-sm w-44"
+            />
+          </div>
+          <div>
+            <input type="file"
+              id="address"
+              placeholder="Upload Thumbnail"
+              className="input-modal"
+              // onChange={handleInputChange}
+              value={AudioInfo.artist}
+            />
+          </div>
+          {/* <input type="text" placeholder="State" className="input-modal" /> */}
+          {/* <SelectState
+            value={locationInfo.stateId}
+            id="stateId"
+            onChange={handleInputChange}
+          /> */}
+          
+          {/* <select
+            id="type"
+            className="input-modal"
+            onChange={handleInputChange}
+            value={locationInfo.type}
+          >
+            <option value="" disabled>
+              ---Select branch type---
+            </option>
+            <option value="Higher Institution">Higher Institution</option>
+            <option value="State Branch">State Branch</option>
+          </select>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              id="longitude"
+              placeholder="Longitude"
+              className="input-modal"
+              step="any"
+              value={
+                locationInfo.longitude === null ? "" : locationInfo.longitude
+              }
+              onChange={handleInputChange}
+            />
+
+            <input
+              type="number"
+              id="latitude"
+              placeholder="Latitude"
+              className="input-modal"
+              step="any"
+              value={
+                locationInfo.latitude === null ? "" : locationInfo.latitude
+              }
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              id="website"
+              placeholder="website"
+              className="input-modal"
+              value={locationInfo.website}
+              onChange={handleInputChange}
+            />
+
+            <input
+              type="text"
+              id="phone"
+              placeholder="phone"
+              className="input-modal"
+              value={locationInfo.phone}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <select
+            id="isHQ"
+            className="input-modal"
+            onChange={handleInputChange}
+            value={locationInfo.isHQ}
+          >
+            <option value="" disabled>
+              ---Select if it is HQ---
+            </option>
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>
+          <Button
+            label={editingMode ? "Update Location" : "Save Location"}
+            type="submit"
+            icon={<BiLocationPlus className="w-4 h-4" />}
+            className="bg-green text-sm w-44"
+            isLoading={isSubmitting}
+          /> */}
+        </form>
+      </Modal>
+      {/* End of Modal component(opens when you click upload)*/}
     </div>
   );
 };
