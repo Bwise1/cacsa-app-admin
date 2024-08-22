@@ -1,4 +1,4 @@
-import { AddLocationPayload, AudioInfo } from "@/types";
+import { AddAudioPayload, AddLocationPayload, AudioInfo } from "@/types";
 import { API_ENDPOINTS } from "./endpoints";
 import { ApiResponse } from "@/types";
 import { authenticatedRequest } from "./api"; // Import the custom function
@@ -24,13 +24,18 @@ export const uploadAudio = async (
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.upload.addEventListener("progress", (event) => {
-      const progress = (event.loaded / event.total) * 100;
-      onProgress(progress);
+      if (event.lengthComputable) {
+        // Calculate progress, but only up to 90%
+        const progress = Math.min((event.loaded / event.total) * 90, 90);
+        onProgress(progress);
+      }
     });
 
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
+          // Upload and processing complete, set progress to 100%
+          onProgress(100);
           resolve(JSON.parse(xhr.responseText));
         } else {
           reject(new Error("Error uploading audio"));
@@ -38,7 +43,15 @@ export const uploadAudio = async (
       }
     };
 
+    xhr.onerror = () => {
+      reject(new Error("Network error occurred"));
+    };
+
     xhr.open("POST", `${serverUrl}${API_ENDPOINTS.UPLOAD_AUDIO}`, true);
+
+    // Set progress to 91% when upload is complete and processing begins
+    xhr.upload.onload = () => onProgress(91);
+
     xhr.send(formData);
   });
 };
@@ -69,7 +82,7 @@ export const fetchAllCategories = async () => {
   }
 };
 
-export const saveAudioDetails = async (audioInfo: AudioInfo) => {
+export const saveAudioDetails = async (audioInfo: AddAudioPayload) => {
   try {
     const response = await fetch(`${serverUrl}${API_ENDPOINTS.AUDIO}`, {
       method: "POST",

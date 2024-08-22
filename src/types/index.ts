@@ -63,4 +63,5 @@ export type AddAudioPayload = {
   category_id: number | null;
   audio_url: string;
   thumbnail_url: string;
-}
+  duration: string;
+};

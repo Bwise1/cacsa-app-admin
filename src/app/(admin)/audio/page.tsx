@@ -2,16 +2,29 @@
 import Button from "@/app/_components/Button";
 import Card from "@/app/_components/Card";
 import React, { FormEvent, useEffect, useState } from "react";
-import { PiChurch, PiMusicNote, PiMusicNotes, PiMusicNotesSimpleBold, PiPlayLight, PiSlidersHorizontal  } from "react-icons/pi";
+import {
+  PiChurch,
+  PiMusicNote,
+  PiMusicNotes,
+  PiMusicNotesSimpleBold,
+  PiPlayLight,
+  PiSlidersHorizontal,
+} from "react-icons/pi";
 import { CiMicrophoneOn } from "react-icons/ci";
 import { BiLocationPlus, BiSearch } from "react-icons/bi";
 
 import Modal from "@/app/_components/Modal";
-import { fetchAllAudio, fetchAllCategories } from "@/lib/actions";
+import {
+  fetchAllAudio,
+  fetchAllCategories,
+  saveAudioDetails,
+} from "@/lib/actions";
 // import SelectState from "./selectState";
 import { AddAudioPayload } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
+
+import AudioUpload from "@/app/dashboard/_components/AudioUpload";
 
 const Location = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -19,7 +32,7 @@ const Location = () => {
   const [category, setAudioCategory] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
-  
+
   const handleClick = () => {
     setOpenModal(true);
   };
@@ -43,7 +56,7 @@ const Location = () => {
   //     } catch {}
   //   };
   interface AudioInfo {
-    id:number
+    id: number;
     title: string;
     description: string;
     artist: string;
@@ -55,78 +68,28 @@ const Location = () => {
     category: string;
   }
   interface Category {
-    id:number
-    name:string
-  };
+    id: number;
+    name: string;
+    thumbnail: string;
+  }
 
   interface ApiResponse<T> {
     status: string;
     [key: string]: any;
   }
 
-  // useEffect(() => {
-  //   const fetchAudios = async () => {
-  //     try {
-  //       const response = await fetchAllAudio();
-  //       const catresponse = await fetchAllCategories();
-  //       // console.log(response.audios);
-  //       console.log(catresponse.categories);
-  //       setAudio(response.audios);
-  //       setAudioCategory(catresponse.categories)
-
-  //       // const getAudioCatId = audios.map((audio)=>audio.category_id);
-  //       // const getCat = category.map((cat)=>cat.id);
-
-  //       // if (getCat){
-  //       //   console.log(getCat);
-  //       // }
-
-  //       // for (let index = 0; index < getAudioCatId.length; index++) {
-  //       //   if (getCat == getAudioCatId[index]){
-  //       //     const element = array[index];
-  //       //   }
-          
-  //       // }
-
-  //       const getAudioCatId = audios.map((audio) => audio.category_id);
-  //       const getCat = category.map((cat) => cat.id);
-
-  //       if (getCat) {
-  //         console.log(getCat);
-        
-  //         for (let index = 0; index < getAudioCatId.length; index++) {
-  //           if (getCat.includes(getAudioCatId[index])) {
-  //             // Use the index to access the corresponding audio or category
-  //             const audioElement = audios[index];
-  //             const categoryElement = category.find((cat) => cat.id === getAudioCatId[index]);
-        
-  //             // Update the audioElement.category_id with categoryElement.name
-  //             audioElement.category_id = categoryElement ? categoryElement.name : 'Unknown Category';
-        
-  //             // Do something with the updated audio element
-  //             console.log("Corresponding audio:", audioElement);
-  //           }
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching categories:", error);
-  //     }
-  //   };
-
-  //   fetchAudios();
-  // }, []);
   useEffect(() => {
     const fetchAudios = async () => {
       try {
         const response = await fetchAllAudio();
         const catresponse = await fetchAllCategories();
         console.log(response.audios);
+        console.log(catresponse.categories);
         setAudio(response.audios);
         setAudioCategory(catresponse.categories);
 
         const getAudioCatId = audios.map((audio) => audio.category_id);
         const getCat = category.map((cat) => cat.id);
-        
 
         // if (getCat) {
         //   for (let index = 0; index < getAudioCatId.length; index++) {
@@ -149,56 +112,115 @@ const Location = () => {
 
   const initialAudioInfo: AddAudioPayload = {
     title: "",
-    description: "",
+    description: "A brief audio discription",
     artist: "",
-    date: "",
+    date: Date.now().toLocaleString(),
     category_id: null,
     audio_url: "",
     thumbnail_url: "",
+    duration: "",
   };
 
   const [AudioInfo, setAudioInfo] = useState<AddAudioPayload>(initialAudioInfo);
 
-  // const initialAudioInfo: 
+  // const initialAudioInfo:
 
   const formatDate = (dateString: string): string => {
-    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: '2-digit' };
-    const formattedDate = new Date(dateString).toLocaleDateString(undefined, options).replace(/\//g, '-');
+    const options: Intl.DateTimeFormatOptions = {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    };
+    const formattedDate = new Date(dateString)
+      .toLocaleDateString(undefined, options)
+      .replace(/\//g, "-");
     return formattedDate;
   };
-  
 
-  // const initialaudioInfo: AddLocationPayload = {
-  //   name: "",
-  //   stateId: null,
-  //   address: "",
-  //   type: "",
-  //   website: "",
-  //   phone: "",
-  //   isHQ: "false",
-  // };
-  // const [audioInfo, setaudioInfo] =
-  //   useState<AddLocationPayload>(initialaudioInfo);
-  // const [submitting, setSubmitting] = useState(false);
+  const handleAudioFileChange = (audioUrl: string): void => {
+    setAudioInfo((prevAudioInfo) => ({
+      ...prevAudioInfo,
+      audio_url: audioUrl,
+    }));
+  };
 
-  // const handleInputChange = (
-  //   event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  // ): void => {
-  //   console.log("target", event.target.value);
-  //   const { id, value } = event.target;
+  const handleInputChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ): void => {
+    const { id, value } = event.target;
 
-  //   let updatedValue: string | number | boolean = value; // Default to the provided value
+    let updatedValue: string | number | null = null; // Default to null for invalid input
 
-  //   // Check if id is 'state_id', convert value to a number
-  //   if (id === "stateId") {
-  //     updatedValue = parseFloat(value);
-  //   }
+    // Check if id is 'stateId', 'longitude', or 'latitude', convert value to a number
+    if (id === "category_id") {
+      const floatValue = parseFloat(value);
+      if (!isNaN(floatValue)) {
+        updatedValue = floatValue;
 
-  //   setaudioInfo((prevaudioInfo) => ({
-  //     ...prevaudioInfo,
-  //     [id]: updatedValue,
-  //   }));
-  // };
+        const selectedCategory = category.find(
+          (item) => item.id === updatedValue
+        );
+        if (selectedCategory) {
+          setAudioInfo((prevInfo) => ({
+            ...prevInfo,
+            thumbnail_url: selectedCategory.thumbnail,
+          }));
+        }
+      }
+    } else {
+      updatedValue = value; // For other fields, keep the provided value
+    }
+
+    setAudioInfo((prevAudioInfo) => ({
+      ...prevAudioInfo,
+      [id]: updatedValue,
+    }));
+  };
+
+  const handleSave = async (): Promise<void> => {
+    // Start submitting
+    setIsSubmitting(true);
+
+    // Validation check for empty fields
+    if (
+      AudioInfo.artist === "" ||
+      AudioInfo.audio_url === "" ||
+      AudioInfo.date === "" ||
+      AudioInfo.description === "" ||
+      AudioInfo.duration === "" ||
+      AudioInfo.thumbnail_url === "" ||
+      AudioInfo.title === ""
+    ) {
+      toast.error("Please check that all fields are filled");
+      setIsSubmitting(false); // Stop submitting as there's an error
+      return; // Return early to allow the user to fix the issues
+    }
+
+    // Proceed if all fields are filled
+    try {
+      const response = await saveAudioDetails(AudioInfo);
+      if (response.status === "success") {
+        console.log("Saved successfully");
+        setAudioInfo(initialAudioInfo);
+
+        // Show success toast
+        toast.success("Audio details saved successfully");
+
+        // Delay the closing of the modal to give time for the success message
+        setTimeout(() => {
+          handleOnClose(); // Close the modal only after success
+        }, 1500); // Adjust this duration as needed
+      } else {
+        // Show error toast if the response indicates failure
+        toast.error("Failed to save audio details");
+      }
+    } catch (error) {
+      // Handle error and show error toast
+      toast.error("There was an error saving the file");
+    } finally {
+      setIsSubmitting(false); // End submitting, whether success or error
+    }
+  };
 
   return (
     <div className="flex h-full  flex-col gap-8 w-full overflow-hidden ">
@@ -252,7 +274,7 @@ const Location = () => {
         <Card>
           <div className="w-[190px] h-[137px]  flex flex-row text-3xl items-center justify-center gap-5">
             <span className=" text-yellow">
-              <PiPlayLight  className="h-10 w-10" />
+              <PiPlayLight className="h-10 w-10" />
             </span>
             <span className="flex flex-col text-4xl font-semibold">
               <span>5000</span>
@@ -292,15 +314,21 @@ const Location = () => {
               /> */}
               <span className="bg-ca-grey text-sm flex items-center p-2 rounded-md w-24">
                 <PiSlidersHorizontal className="h-5 w-10" />
-                <Link href="" onClick={handleClick}>All</Link>
+                <Link href="" onClick={handleClick}>
+                  All
+                </Link>
               </span>
               <span className="bg-green text-sm flex items-center p-2 rounded-md">
                 <PiMusicNotes className="h-5 w-10" />
-                <Link href="" onClick={handleClick}>Upload Audio</Link>
+                <Link href="" onClick={handleClick}>
+                  Upload Audio
+                </Link>
               </span>
               <span className="bg-ca-grey text-sm flex items-center p-2 w-24 rounded-md">
                 <PiMusicNote className="h-5 w-10" />
-                <Link className="" href="" onClick={handleClick}>Edit</Link>
+                <Link className="" href="" onClick={handleClick}>
+                  Edit
+                </Link>
               </span>
               {/* <Button
                 label={"Edit"}
@@ -315,7 +343,7 @@ const Location = () => {
                 />
                 <span>All</span> */}
             </div>
-            
+
             <div className="w-full max-h-full overflow-y-scroll  mt-7 grid">
               <table className="py-3 mb-6 table-auto max-h-full">
                 <thead className="bg-green">
@@ -332,14 +360,17 @@ const Location = () => {
                   {audios.map((audio) => (
                     <tr
                       key={audio.title}
-                    //   className={`w-full ${
-                    //     selectedRow === audio.category_id ? "bg-green" : ""
-                    //   }`}
+                      //   className={`w-full ${
+                      //     selectedRow === audio.category_id ? "bg-green" : ""
+                      //   }`}
                       onClick={() => setSelectedRow(audio.category_id)}
                     >
                       <td className=" p-2">{audio.title}</td>
                       <td className="truncate p-2 flex">{audio.artist}</td>
-                      <td className=" p-2">{category.find((cat) => cat.id === audio.category_id)?.name || 'Unknown Category'}</td>
+                      <td className=" p-2">
+                        {category.find((cat) => cat.id === audio.category_id)
+                          ?.name || "Unknown Category"}
+                      </td>
                       <td className=" p-2">{formatDate(audio.date)}</td>
                       <td className=" p-2">{audio.id}</td>
                       <td className=" p-2">{audio.duration}</td>
@@ -357,132 +388,66 @@ const Location = () => {
       {/* Start of Modal component(opens when you click upload)*/}
       <Modal isOpen={openModal} onClose={handleOnClose}>
         <form
-          className="pt-16 w-full flex items-center gap-3"
-          // onSubmit={handleSubmit}
+
+        // onSubmit={handleSubmit}
         >
-          <div className="">
-            <input type="text"
-              id="name"
-              placeholder="Title"
-              className="input-modal my-4 h-8"
-              // onChange={handleInputChange}
-              value={AudioInfo.title}
-            />
-            <input type="text"
-              id="name"
-              placeholder="Music description"
-              className="input-modal my-4 h-8"
-              // onChange={handleInputChange}
-              value={AudioInfo.description}
-            />
-            <input type="text" id="address" placeholder="Artist/Preacher" className="input-modal my-4 h-8"
-              // onChange={handleInputChange}
-              value={AudioInfo.artist}
-            />
-            <input type="text"
-              id="address"
-              placeholder="Duration"
-              className="input-modal my-4 h-8"
-              // onChange={handleInputChange}
-              value={AudioInfo.artist}
-            />
-            <Button type="submit" label="Upload Audio"
-              icon={<PiMusicNotes className="w-4 h-4" />}
-              className="bg-green text-sm w-44"
-            />
-          </div>
-          <div>
-            <input type="file"
-              id="address"
-              placeholder="Upload Thumbnail"
-              className="input-modal"
-              // onChange={handleInputChange}
-              value={AudioInfo.artist}
-            />
-          </div>
-          {/* <input type="text" placeholder="State" className="input-modal" /> */}
-          {/* <SelectState
-            value={locationInfo.stateId}
-            id="stateId"
-            onChange={handleInputChange}
-          /> */}
-          
-          {/* <select
-            id="type"
-            className="input-modal"
-            onChange={handleInputChange}
-            value={locationInfo.type}
-          >
-            <option value="" disabled>
-              ---Select branch type---
-            </option>
-            <option value="Higher Institution">Higher Institution</option>
-            <option value="State Branch">State Branch</option>
-          </select>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              id="longitude"
-              placeholder="Longitude"
-              className="input-modal"
-              step="any"
-              value={
-                locationInfo.longitude === null ? "" : locationInfo.longitude
-              }
-              onChange={handleInputChange}
-            />
+          <div className="pt-16 w-full flex items-center gap-3">
+            <div>
+              <input
+                type="text"
+                id="title"
+                placeholder="Title"
+                className="input-modal my-4 h-8"
+                onChange={handleInputChange}
+                value={AudioInfo.title}
+              />
 
-            <input
-              type="number"
-              id="latitude"
-              placeholder="Latitude"
-              className="input-modal"
-              step="any"
-              value={
-                locationInfo.latitude === null ? "" : locationInfo.latitude
-              }
-              onChange={handleInputChange}
-            />
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              id="website"
-              placeholder="website"
-              className="input-modal"
-              value={locationInfo.website}
-              onChange={handleInputChange}
-            />
+              <input
+                type="text"
+                id="artist"
+                placeholder="Artist/Preacher"
+                className="input-modal my-4 h-8"
+                onChange={handleInputChange}
+                value={AudioInfo.artist}
+              />
+              <div>
+                <select
+                  id="category_id"
+                  className="input-modal"
+                  onChange={handleInputChange}
+                  value={AudioInfo.category_id ?? ""}
+                >
+                  <option value="" disabled>
+                    ---select category---
+                  </option>
+                  {category.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <input
-              type="text"
-              id="phone"
-              placeholder="phone"
-              className="input-modal"
-              value={locationInfo.phone}
-              onChange={handleInputChange}
-            />
+              <input
+                type="text"
+                id="duration"
+                placeholder="Duration"
+                className="input-modal my-4 h-8"
+                onChange={handleInputChange}
+                value={AudioInfo.duration}
+              />
+            </div>
+            <div>
+              <AudioUpload onUploadResult={handleAudioFileChange} />
+            </div>
           </div>
-
-          <select
-            id="isHQ"
-            className="input-modal"
-            onChange={handleInputChange}
-            value={locationInfo.isHQ}
-          >
-            <option value="" disabled>
-              ---Select if it is HQ---
-            </option>
-            <option value="true">True</option>
-            <option value="false">False</option>
-          </select>
           <Button
-            label={editingMode ? "Update Location" : "Save Location"}
             type="submit"
-            icon={<BiLocationPlus className="w-4 h-4" />}
+            label="Upload Audio"
+            icon={<PiMusicNotes className="w-4 h-4" />}
             className="bg-green text-sm w-44"
-            isLoading={isSubmitting}
-          /> */}
+            onClick={handleSave}
+          />
         </form>
       </Modal>
       {/* End of Modal component(opens when you click upload)*/}
