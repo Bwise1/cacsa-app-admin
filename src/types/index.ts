@@ -54,3 +54,14 @@ export type AddLocationPayload = {
   phone: string;
   isHQ: string;
 };
+
+export type AddAudioPayload = {
+  title: string;
+  description: string;
+  artist: string;
+  date: string;
+  category_id: number | null;
+  audio_url: string;
+  thumbnail_url: string;
+  duration: string;
+};

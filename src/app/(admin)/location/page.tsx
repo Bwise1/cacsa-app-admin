@@ -50,6 +50,7 @@ const Location = () => {
       setOpenModal(true);
     }
   };
+
   const handleOnClose = () => {
     setOpenModal(false);
     seteditingMode(false);

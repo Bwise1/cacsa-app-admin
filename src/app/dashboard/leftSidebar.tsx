@@ -18,7 +18,7 @@ const LeftSideBar: React.FC = () => {
         {/* </Link> */}
         <Link
           className="flex justify-between hover:bg-light-white rounded-md mt-2"
-          href={""}
+          href="/audio"
         >
           Audio
           {/* <BsChevronDown
