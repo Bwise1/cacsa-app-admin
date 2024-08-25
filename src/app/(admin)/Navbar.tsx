@@ -16,18 +16,18 @@ const Navbar: React.FC = () => {
       </div>
       <div className="flex flex-col text-xl  h-full">
         <Link
-          className={`inline-flex px-10 py-2 items-center rounded-md gap-4 ${
+          className={`inline-flex px-10 my-1 py-2 items-center rounded-md gap-4 ${
             pathname.includes("/audio")
               ? "bg-green"
               : " hover:bg-green hover:opacity-60"
           }`}
-          href="dashboard"
+          href={"audio"}
         >
           <HiOutlineMusicNote className="" />
           <span>Audio</span>
         </Link>
         <Link
-          className={`inline-flex px-10 py-2 rounded-md items-center gap-4 ${
+          className={`inline-flex px-10 my-1 py-2 rounded-md items-center gap-4 ${
             pathname.includes("/location")
               ? "bg-green"
               : " hover:bg-green hover:opacity-60"
@@ -38,7 +38,7 @@ const Navbar: React.FC = () => {
           <span>Location</span>
         </Link>
         <Link
-          className={`inline-flex px-10 py-2 rounded-md items-center gap-4 ${
+          className={`inline-flex px-10 my-1 py-2 rounded-md items-center gap-4 ${
             pathname.includes("/users")
               ? "bg-green"
               : " hover:bg-green hover:opacity-60"

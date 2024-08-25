@@ -17,6 +17,7 @@ import Modal from "@/app/_components/Modal";
 import {
   fetchAllAudio,
   fetchAllCategories,
+  fetchAudioStats,
   saveAudioDetails,
 } from "@/lib/actions";
 // import SelectState from "./selectState";
@@ -26,16 +27,26 @@ import Link from "next/link";
 
 import AudioUpload from "@/app/dashboard/_components/AudioUpload";
 
-const Location = () => {
+const Audio = () => {
   const [openModal, setOpenModal] = useState(false);
+  const [openSortModal, setOpenSortModal] = useState(false);
   const [audios, setAudio] = useState<AudioInfo[]>([]);
+  const [filteredAudios, setFilteredAudios] = useState<AudioInfo[]>(audios);
   const [category, setAudioCategory] = useState<Category[]>([]);
+  const [audioStats, setAudioStats] = useState<AudioStats>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [editingMode, seteditingMode] = useState(false);
 
   const handleClick = () => {
     setOpenModal(true);
   };
+
+  const handleSortClick = () => {
+    setOpenSortModal(true);
+  };
+
   const handleOnClose = () => {
     setOpenModal(false);
   };
@@ -73,6 +84,13 @@ const Location = () => {
     thumbnail: string;
   }
 
+  interface AudioStats {
+    total: number;
+    sermon: number;
+    podcast: number;
+    music: number;
+  }
+
   interface ApiResponse<T> {
     status: string;
     [key: string]: any;
@@ -81,12 +99,28 @@ const Location = () => {
   useEffect(() => {
     const fetchAudios = async () => {
       try {
-        const response = await fetchAllAudio();
-        const catresponse = await fetchAllCategories();
-        console.log(response.audios);
-        console.log(catresponse.categories);
+        // const response = await fetchAllAudio();
+        // const catresponse = await fetchAllCategories();
+        // const stats = await fetchAudioStats();
+        const [response, catresponse, stats] = await Promise.all([
+          fetchAllAudio(),
+          fetchAllCategories(),
+          fetchAudioStats(),
+        ]);
+
         setAudio(response.audios);
+        setFilteredAudios(response.audios);
         setAudioCategory(catresponse.categories);
+
+        const audioStats: AudioStats = {
+          total: stats.data.total,
+          sermon: stats.data.stats[0].count,
+          podcast: stats.data.stats[1].count,
+          music: stats.data.stats[2].count,
+        };
+        setAudioStats(audioStats);
+
+        console.log("Audio Stats:", audioStats);
 
         const getAudioCatId = audios.map((audio) => audio.category_id);
         const getCat = category.map((cat) => cat.id);
@@ -177,48 +211,152 @@ const Location = () => {
     }));
   };
 
-  const handleSave = async (): Promise<void> => {
-    // Start submitting
+  // const handleSave = async (e: React.FormEvent): Promise<void> => {
+  //   e.preventDefault(); // Prevent form submission if this is called from a form
+  //   setIsSubmitting(true);
+  //   console.log("Saving AudioInfo:", AudioInfo);
+
+  //   // Validation check for empty fields
+  //   const emptyFields = Object.entries(AudioInfo).filter(
+  //     ([key, value]) => value === ""
+  //   );
+  //   if (emptyFields.length > 0) {
+  //     toast.error(
+  //       `Please fill in the following fields: ${emptyFields
+  //         .map(([key]) => key)
+  //         .join(", ")}`
+  //     );
+  //     setIsSubmitting(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await saveAudioDetails(AudioInfo);
+  //     console.log("Save response:", response);
+
+  //     if (response.status === "success") {
+  //       console.log("Saved successfully");
+  //       setAudioInfo(initialAudioInfo);
+  //       toast.success("Audio details saved successfully");
+  //       setTimeout(handleOnClose, 1500);
+  //     } else {
+  //       console.error("Error response:", response);
+  //       toast.error(
+  //         `Failed to save audio details: ${response.message || "Unknown error"}`
+  //       );
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Error saving audio details:", error);
+  //     toast.error(
+  //       `Error saving audio details: ${error.message || "Unknown error"}`
+  //     );
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
+  const handleSave = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault(); // Prevent form submission if this is called from a form
     setIsSubmitting(true);
+    console.log("Saving AudioInfo:", AudioInfo);
 
     // Validation check for empty fields
-    if (
-      AudioInfo.artist === "" ||
-      AudioInfo.audio_url === "" ||
-      AudioInfo.date === "" ||
-      AudioInfo.description === "" ||
-      AudioInfo.duration === "" ||
-      AudioInfo.thumbnail_url === "" ||
-      AudioInfo.title === ""
-    ) {
-      toast.error("Please check that all fields are filled");
-      setIsSubmitting(false); // Stop submitting as there's an error
-      return; // Return early to allow the user to fix the issues
+    const emptyFields = Object.entries(AudioInfo).filter(
+      ([key, value]) => value === ""
+    );
+    if (emptyFields.length > 0) {
+      toast.error(
+        `Please fill in the following fields: ${emptyFields
+          .map(([key]) => key)
+          .join(", ")}`
+      );
+      setIsSubmitting(false);
+      return;
     }
 
-    // Proceed if all fields are filled
     try {
-      const response = await saveAudioDetails(AudioInfo);
-      if (response.status === "success") {
-        console.log("Saved successfully");
-        setAudioInfo(initialAudioInfo);
+      let response;
 
-        // Show success toast
-        toast.success("Audio details saved successfully");
-
-        // Delay the closing of the modal to give time for the success message
-        setTimeout(() => {
-          handleOnClose(); // Close the modal only after success
-        }, 1500); // Adjust this duration as needed
+      if (editingMode) {
+        // If editingMode is true, perform an update operation
+        // response = await updateAudioDetails(AudioInfo);
+        // console.log("Edit response:", response);
       } else {
-        // Show error toast if the response indicates failure
-        toast.error("Failed to save audio details");
+        // Otherwise, perform a save operation
+        response = await saveAudioDetails(AudioInfo);
+        console.log("Save response:", response);
       }
-    } catch (error) {
-      // Handle error and show error toast
-      toast.error("There was an error saving the file");
+
+      if (response.status === "success") {
+        console.log(editingMode ? "Edited successfully" : "Saved successfully");
+        setAudioInfo(initialAudioInfo);
+        toast.success(
+          editingMode
+            ? "Audio details updated successfully"
+            : "Audio details saved successfully"
+        );
+        setTimeout(handleOnClose, 1500);
+      } else {
+        console.error("Error response:", response);
+        toast.error(
+          `Failed to ${editingMode ? "update" : "save"} audio details: ${
+            response.message || "Unknown error"
+          }`
+        );
+      }
+    } catch (error: any) {
+      console.error(
+        editingMode
+          ? "Error updating audio details:"
+          : "Error saving audio details:",
+        error
+      );
+      toast.error(
+        `Error ${editingMode ? "updating" : "saving"} audio details: ${
+          error.message || "Unknown error"
+        }`
+      );
     } finally {
-      setIsSubmitting(false); // End submitting, whether success or error
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCategorySelect = (categoryName: string) => {
+    setSelectedCategory(categoryName);
+    setOpenSortModal(false);
+    console.log(audios);
+    console.log(category);
+    if (categoryName === "All") {
+      setFilteredAudios(audios);
+    } else {
+      const selectedCategoryId = category.find(
+        (cat) => cat.name === categoryName
+      )?.id;
+      const filteredAudios = audios.filter(
+        (audio) => audio.category_id === selectedCategoryId
+      );
+      setFilteredAudios(filteredAudios);
+    }
+  };
+
+  const handleEditClick = () => {
+    if (selectedRow !== null) {
+      const selectedAudio = audios.find((audio) => audio.id === selectedRow);
+      console.log(selectedAudio);
+
+      seteditingMode(true);
+
+      setAudioInfo({
+        title: selectedAudio?.title || "",
+        description: selectedAudio?.description || "",
+        artist: selectedAudio?.artist || "",
+        date: selectedAudio?.date || "",
+        category_id: selectedAudio?.category_id || null,
+        audio_url: selectedAudio?.audio_url || "",
+        thumbnail_url: selectedAudio?.thumbnail_url || "",
+        duration: selectedAudio?.duration || "",
+      });
+      setOpenModal(true);
     }
   };
 
@@ -233,7 +371,7 @@ const Location = () => {
               <PiMusicNote className="h-10 w-10" />
             </span>
             <span className="flex flex-col text-4xl font-semibold">
-              <span>250</span>
+              <span>{audioStats?.total} </span>
               <span className="text-base font-medium">Audios</span>
             </span>
           </div>
@@ -244,7 +382,7 @@ const Location = () => {
               <PiMusicNotes className="h-10 w-10" />
             </span>
             <span className="flex flex-col text-4xl font-semibold">
-              <span>150</span>
+              <span>{audioStats?.sermon} </span>
               <span className="text-base font-medium">Sermons</span>
             </span>
           </div>
@@ -255,7 +393,7 @@ const Location = () => {
               <CiMicrophoneOn className="h-10 w-10" />
             </span>
             <span className="flex flex-col text-4xl font-semibold">
-              <span>25</span>
+              <span>{audioStats?.podcast} </span>
               <span className="text-base font-medium">Podcasts</span>
             </span>
           </div>
@@ -266,7 +404,7 @@ const Location = () => {
               <PiMusicNotesSimpleBold className="h-10 w-10" />
             </span>
             <span className="flex flex-col text-4xl font-semibold">
-              <span>50</span>
+              <span>{audioStats?.music} </span>
               <span className="text-base font-medium">Music</span>
             </span>
           </div>
@@ -312,11 +450,41 @@ const Location = () => {
                 onClick={handleClick}
                 className="bg-green text-sm "
               /> */}
-              <span className="bg-ca-grey text-sm flex items-center p-2 rounded-md w-24">
+              <span
+                className="bg-ca-grey text-sm flex items-center relative p-2 rounded-md w-24"
+                onClick={() => setOpenSortModal(!openSortModal)}
+              >
                 <PiSlidersHorizontal className="h-5 w-10" />
-                <Link href="" onClick={handleClick}>
-                  All
+                <Link href="" className="" onClick={handleSortClick}>
+                  {selectedCategory}
                 </Link>
+                {openSortModal && (
+                  <div className="absolute mt-2 w-48 bg-ca-grey rounded-md shadow-lg z-10 top-10">
+                    <ul className="py-1">
+                      {/* Use categories for dynamic approach, staticCategories for static approach */}
+
+                      <li
+                        className="block px-4 py-2 text-sm text-white hover:bg-green"
+                        onClick={() => {
+                          handleCategorySelect("All");
+                        }}
+                      >
+                        All
+                      </li>
+                      {category.map((aCategory) => (
+                        <li key={aCategory.id}>
+                          <Link
+                            href="#"
+                            onClick={() => handleCategorySelect(aCategory.name)}
+                            className="block px-4 py-2 text-sm text-white hover:bg-green"
+                          >
+                            {aCategory.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </span>
               <span className="bg-green text-sm flex items-center p-2 rounded-md">
                 <PiMusicNotes className="h-5 w-10" />
@@ -324,12 +492,14 @@ const Location = () => {
                   Upload Audio
                 </Link>
               </span>
-              <span className="bg-ca-grey text-sm flex items-center p-2 w-24 rounded-md">
+              <button
+                onClick={handleEditClick}
+                className="bg-ca-grey text-sm flex items-center p-2 w-24 rounded-md hover:bg-green"
+              >
                 <PiMusicNote className="h-5 w-10" />
-                <Link className="" href="" onClick={handleClick}>
-                  Edit
-                </Link>
-              </span>
+                Edit
+              </button>
+
               {/* <Button
                 label={"Edit"}
                 onClick={() => {}}
@@ -357,13 +527,13 @@ const Location = () => {
                   </tr>
                 </thead>
                 <tbody className="">
-                  {audios.map((audio) => (
+                  {filteredAudios.map((audio) => (
                     <tr
                       key={audio.title}
-                      //   className={`w-full ${
-                      //     selectedRow === audio.category_id ? "bg-green" : ""
-                      //   }`}
-                      onClick={() => setSelectedRow(audio.category_id)}
+                      className={`w-full ${
+                        selectedRow === audio.id ? "bg-green" : ""
+                      }`}
+                      onClick={() => setSelectedRow(audio.id)}
                     >
                       <td className=" p-2">{audio.title}</td>
                       <td className="truncate p-2 flex">{audio.artist}</td>
@@ -455,4 +625,4 @@ const Location = () => {
   );
 };
 
-export default Location;
+export default Audio;

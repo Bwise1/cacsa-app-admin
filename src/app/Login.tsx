@@ -28,7 +28,7 @@ export default function Login() {
       } else {
         console.info("from login page", result);
         // Handle successful login, e.g., redirect to dashboard
-        router.push("/dashboard");
+        router.push("/audio");
         // console.log("Logged IN");
         // console.log("RESULT RESULT RESULT", result);
       }

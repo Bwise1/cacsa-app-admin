@@ -75,6 +75,7 @@ export const fetchAllCategories = async () => {
   try {
     const response = await fetch(`${serverUrl}${API_ENDPOINTS.CATEGORY}`, {
       method: "GET",
+      next: { revalidate: 3600 },
     });
     return response.json();
   } catch (err) {
@@ -154,6 +155,22 @@ export const fetchAllAudio = async () => {
     const response = await fetch(`${serverUrl}${API_ENDPOINTS.AUDIO}`, {
       method: "GET",
     });
+    console.log(response.json);
+    return response.json();
+  } catch (err) {
+    throw err;
+  }
+};
+
+//fetch audio stats
+export const fetchAudioStats = async () => {
+  try {
+    const response = await fetch(
+      `${serverUrl}${API_ENDPOINTS.AUDIO}stats/all`,
+      {
+        method: "GET",
+      }
+    );
     console.log(response.json);
     return response.json();
   } catch (err) {
