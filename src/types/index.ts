@@ -6,8 +6,8 @@ export type AudioInfo = {
   category_id: number;
   audio_url: string;
   thumbnail_url: string;
-  duration: string;
-  [key: string]: string | number;
+  duration?: string;
+  [key: string]: string | number | undefined;
 };
 
 export type AudioUpload = {
@@ -41,6 +41,8 @@ export interface Location {
 export type ApiResponse = {
   status: string;
   link: string;
+  /** Set when the server could read duration from the uploaded file (same as save flow). */
+  duration?: string | null;
 };
 
 export type AddLocationPayload = {
@@ -63,5 +65,21 @@ export type AddAudioPayload = {
   category_id: number | null;
   audio_url: string;
   thumbnail_url: string;
-  duration: string;
+  /** Optional; server derives duration from the file when omitted. */
+  duration?: string;
+};
+
+/** Row from `subscription_plans` (admin + Paystack). */
+export type SubscriptionPlanRow = {
+  id: number;
+  name: string;
+  description: string | null;
+  amount: string | number;
+  interval: string;
+  currency: string;
+  is_active: number | boolean;
+  plan_code: string | null;
+  plan_kind: string;
+  created_at?: string;
+  updated_at?: string;
 };

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 import Logo from "../../public/cacsa.svg";
@@ -26,11 +26,18 @@ export default function Login() {
       if (result?.error) {
         console.log(result.error);
       } else {
-        console.info("from login page", result);
-        // Handle successful login, e.g., redirect to dashboard
-        router.push("/audio");
-        // console.log("Logged IN");
-        // console.log("RESULT RESULT RESULT", result);
+        const session = await getSession();
+        const perms = session?.user?.permissions ?? [];
+        let dest = "/overview";
+        if (perms.includes("admin:analytics")) dest = "/overview";
+        else if (perms.includes("admin:manage_plans")) dest = "/plans";
+        else if (perms.includes("audio:write")) dest = "/audio";
+        else if (perms.includes("branch:write")) dest = "/location";
+        else if (perms.includes("notifications:send")) dest = "/notifications";
+        else if (perms.includes("admin:manage_roles")) dest = "/roles";
+        else if (perms.includes("admin:invite")) dest = "/invites";
+        else if (perms.includes("user:read")) dest = "/users";
+        router.push(dest);
       }
     } catch (error) {
       console.error("An error occurred:", error);

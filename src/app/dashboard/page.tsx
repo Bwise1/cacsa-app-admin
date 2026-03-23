@@ -3,7 +3,7 @@ import LeftSideBar from "./leftSidebar";
 import Middle from "./middle";
 import RightSideBar from "./rightSidebar";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 
 const DashboardPage: React.FC = async () => {
   const session = await getServerSession(authOptions);

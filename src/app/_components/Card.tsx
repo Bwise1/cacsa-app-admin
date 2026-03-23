@@ -2,12 +2,15 @@ import React, { ReactNode } from "react";
 
 interface CardProps {
   children: ReactNode;
-  // You can add more prop types here if needed
+  /** Replaces default `h-full` when set (e.g. modals with auto height). */
+  className?: string;
 }
 
-const Card: React.FC<CardProps> = ({ children }) => {
+const Card: React.FC<CardProps> = ({ children, className }) => {
   return (
-    <div className="rounded-[5px] border border-green bg-ca-black self-center h-full ">
+    <div
+      className={`rounded-[5px] border border-green bg-ca-black self-center ${className ?? "h-full"}`}
+    >
       {children}
     </div>
   );

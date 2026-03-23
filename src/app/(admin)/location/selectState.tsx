@@ -11,20 +11,22 @@ interface SelectStateProps {
   id: string;
 }
 
-const SelectState: React.FC<SelectStateProps> = ({ onChange, id }) => {
-  const { data, error, isLoading } = useSWR(
+const SelectState: React.FC<SelectStateProps> = ({ onChange, id, value }) => {
+  const { data } = useSWR(
     `${process.env.NEXT_PUBLIC_REST_API_ENDPOINT}${API_ENDPOINTS.STATES}`,
     fetcher
   );
 
-  if (!data) {
+  if (!data?.states) {
     return null;
   }
-  // console.log(data.states);
+  const v = value == null ? "" : String(value);
   return (
     <div>
       <Select
         id={id}
+        name={id}
+        value={v}
         options={[
           { id: "", state_name: "---Select State---", isDisabled: true },
           ...data.states,

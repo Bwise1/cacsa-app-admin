@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import React from "react";
 import Image from "next/image";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import Thinktech from "../../../public/thinktech.png";
 
 const RightSideBar: React.FC = async () => {

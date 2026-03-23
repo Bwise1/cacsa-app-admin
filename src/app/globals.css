@@ -15,13 +15,17 @@ body {
 }
 
 .input-modal {
-  @apply py-3 px-5 text-white text-sm font-normal bg-zinc-800 rounded-[10px] placeholder:text-white appearance-none outline-none focus:ring-2 focus:ring-green ring-inset w-full;
+  @apply w-full min-h-[2.75rem] rounded-[10px] bg-zinc-800 px-4 py-2.5 text-sm text-white font-normal placeholder:text-white/80 appearance-none outline-none focus:ring-2 focus:ring-green ring-inset;
+}
+
+textarea.input-modal {
+  @apply h-auto min-h-[80px] py-2 leading-relaxed;
 }
 
 .top-icons {
-  @apply flex h-10 px-5 text-white text-sm font-normal bg-zinc-800 rounded-[10px];
+  @apply flex min-h-[2.75rem] items-center px-5 text-white text-sm font-normal bg-zinc-800 rounded-[10px];
 }
 
 .top-icons > input {
-  @apply py-3 px-10 appearance-none outline-none placeholder:text-white w-full;
+  @apply min-h-[2.75rem] py-2.5 px-10 appearance-none outline-none placeholder:text-white w-full;
 }

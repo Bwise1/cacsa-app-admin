@@ -17,7 +17,6 @@ const SaveAudio: React.FC = ({}) => {
     category_id: -1,
     audio_url: "",
     thumbnail_url: "",
-    duration: "",
   };
 
   const [audioInfo, setAudioInfo] = useState<AudioInfo>(initialAudioInfo);
@@ -63,7 +62,6 @@ const SaveAudio: React.FC = ({}) => {
       audioInfo.category_id == -1 ||
       audioInfo.date == "" ||
       audioInfo.description == "" ||
-      audioInfo.duration == "" ||
       audioInfo.thumbnail_url == "" ||
       audioInfo.title == ""
     ) {
@@ -130,13 +128,9 @@ const SaveAudio: React.FC = ({}) => {
         />
         <AudioUpload onUploadResult={handleAudioFileChange} />
         <ThumbNailUpload onThumbnailFileChange={handleThumbnailFileChange} />
-        <Input
-          className="w-full p-6 bg-white rounded-[10px] border border-white"
-          id="duration"
-          placeholder="Duration in the form of hr:min:sec e.g 00:18:20"
-          value={audioInfo.duration}
-          onChange={handleInputChange}
-        />
+        <p className="text-sm text-gray-600">
+          Duration is set automatically on the server from the uploaded audio file.
+        </p>
         {/* Submit Button */}
         <div>
           <button
