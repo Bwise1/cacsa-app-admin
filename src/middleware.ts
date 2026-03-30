@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { canAccessHymns } from "@/lib/hymns/permissions";
 
 /** First route after login / when redirecting away from `/` (aligned with Login.tsx). */
 function defaultHomePath(perms: string[]): string {
   if (perms.includes("admin:analytics")) return "/overview";
+  if (perms.includes("hymns:write")) return "/hymns";
   if (perms.includes("admin:manage_plans")) return "/plans";
   if (perms.includes("audio:write")) return "/audio";
   if (perms.includes("branch:write")) return "/location";
@@ -40,9 +42,14 @@ export async function middleware(req: NextRequest) {
 
   const perms = (token.permissions as string[]) ?? [];
   const has = (p: string) => perms.includes(p);
+  const fallback = defaultHomePath(perms);
 
   if (pathname === "/audio-stats" || pathname.startsWith("/audio-stats/")) {
     return NextResponse.redirect(new URL("/overview", req.url));
+  }
+
+  if (pathname.startsWith("/hymns") && !canAccessHymns(perms)) {
+    return NextResponse.redirect(new URL(fallback, req.url));
   }
 
   const rules: [string, string][] = [
@@ -54,8 +61,6 @@ export async function middleware(req: NextRequest) {
     ["/location", "branch:write"],
     ["/users", "user:read"],
   ];
-
-  const fallback = defaultHomePath(perms);
 
   for (const [prefix, perm] of rules) {
     if (pathname.startsWith(prefix) && !has(perm)) {
@@ -82,5 +87,7 @@ export const config = {
     "/notifications/:path*",
     "/roles/:path*",
     "/invites/:path*",
+    "/hymns",
+    "/hymns/:path*",
   ],
 };

@@ -7,9 +7,15 @@ import { ImSwitch } from "react-icons/im";
 import { HiOutlineMusicNote } from "react-icons/hi";
 import { BiLocationPlus } from "react-icons/bi";
 import { MdOutlineAdminPanelSettings, MdOutlineEmail, MdOutlineShare } from "react-icons/md";
-import { HiOutlineBell, HiOutlineMegaphone, HiOutlineUsers } from "react-icons/hi2";
+import {
+  HiOutlineBell,
+  HiOutlineBookOpen,
+  HiOutlineMegaphone,
+  HiOutlineUsers,
+} from "react-icons/hi2";
 import { TbLayoutDashboard } from "react-icons/tb";
 import { PiCreditCard } from "react-icons/pi";
+import { canAccessHymns } from "@/lib/hymns/permissions";
 
 const iconClass = "h-[18px] w-[18px] shrink-0";
 
@@ -18,6 +24,7 @@ const Navbar: React.FC = () => {
   const { data: session } = useSession();
   const perms = session?.user?.permissions ?? [];
   const has = (p: string) => perms.includes(p);
+  const showHymns = canAccessHymns(perms);
 
   const navActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -38,6 +45,12 @@ const Navbar: React.FC = () => {
           <Link className={linkClass("/overview")} href="/overview">
             <TbLayoutDashboard className={iconClass} aria-hidden />
             <span>Overview</span>
+          </Link>
+        )}
+        {showHymns && (
+          <Link className={linkClass("/hymns")} href="/hymns">
+            <HiOutlineBookOpen className={iconClass} aria-hidden />
+            <span>Hymns</span>
           </Link>
         )}
         {has("audio:write") && (

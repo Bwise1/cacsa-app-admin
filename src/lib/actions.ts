@@ -267,6 +267,8 @@ export type AdminDevotionalLeaderboardRow = {
   longestStreakDays: number;
   totalPoints: number;
   lastCompletedDate: string | null;
+  rank?: string;
+  rankColorHex?: string;
 };
 
 export type AdminDevotionalLeaderboardPayload = {
@@ -335,10 +337,18 @@ export const updateAdminDevotionalSettings = async (body: {
   );
 };
 
-export const fetchAdminDevotionalLeaderboard = async (limit: number = 20) => {
-  const q = `?limit=${Math.min(Math.max(limit, 1), 100)}`;
+export type DevotionalLeaderboardTimeframe = "this_month" | "this_year";
+
+export const fetchAdminDevotionalLeaderboard = async (
+  limit: number = 20,
+  timeframe: DevotionalLeaderboardTimeframe = "this_year"
+) => {
+  const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const params = new URLSearchParams();
+  params.set("limit", String(safeLimit));
+  params.set("timeframe", timeframe);
   return authenticatedRequest<AdminDevotionalLeaderboardPayload>(
-    `${serverUrl}${API_ENDPOINTS.ADMIN_DEVOTIONAL_LEADERBOARD}${q}`,
+    `${serverUrl}${API_ENDPOINTS.ADMIN_DEVOTIONAL_LEADERBOARD}?${params.toString()}`,
     "GET"
   );
 };

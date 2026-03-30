@@ -24,4 +24,6 @@ export const API_ENDPOINTS = {
   ADMIN_ADS: "admin/ads",
   ADMIN_ADS_UPLOAD: "admin/ads/upload",
   ADMIN_REFERRALS: "admin/referrals",
+  ADMIN_HYMNS_BUNDLE: "admin/hymns/bundle",
+  ADMIN_HYMNS_MANIFEST: "admin/hymns/manifest",
 };
