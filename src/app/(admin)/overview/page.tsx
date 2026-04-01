@@ -724,7 +724,7 @@ export default function OverviewPage() {
                     </div>
                     <div className="flex flex-col gap-3">
                       <div>
-                        <div className="text-xs text-white/50">Highest streak</div>
+                        <div className="text-xs text-white/50">Highest current streak (effective)</div>
                         <div className="text-lg font-semibold tabular-nums text-white">
                           {fmtNum(
                             Math.max(...leaderboardRows.map((r) => r.currentStreakDays))
