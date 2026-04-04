@@ -7,6 +7,7 @@ import PaginationBar from "@/app/_components/PaginationBar";
 import {
   createAdminSubscriptionPlan,
   deleteAdminStudentVerification,
+  fetchAdminStudentVerification,
   fetchAdminSubscriptionPlans,
   fetchStudentVerificationStatus,
   putAdminStudentVerification,
@@ -90,6 +91,7 @@ const PlansPage = () => {
     Record<string, boolean>
   >({});
   const [verificationCodeInput, setVerificationCodeInput] = useState("");
+  const [verificationCodeLoading, setVerificationCodeLoading] = useState(false);
   const [verificationSaving, setVerificationSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -183,6 +185,8 @@ const PlansPage = () => {
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm());
+    setVerificationCodeInput("");
+    setVerificationCodeLoading(false);
     setModalOpen(true);
   };
 
@@ -190,7 +194,27 @@ const PlansPage = () => {
     if (selectedId == null || !selectedPlan) return;
     setEditingId(selectedId);
     setForm(rowToForm(selectedPlan));
+    setVerificationCodeInput("");
     setModalOpen(true);
+    if (
+      isStudentVerificationKind(selectedPlan.plan_kind) &&
+      String(selectedPlan.plan_code ?? "").trim() !== ""
+    ) {
+      setVerificationCodeLoading(true);
+      void fetchAdminStudentVerification(selectedId)
+        .then((res) => {
+          if (res && typeof res === "object" && "code" in res) {
+            const c = res.code;
+            setVerificationCodeInput(
+              c != null && String(c).trim() !== "" ? String(c) : ""
+            );
+          }
+        })
+        .catch(() => {
+          toast.error("Could not load verification code");
+        })
+        .finally(() => setVerificationCodeLoading(false));
+    }
   };
 
   const closeModal = () => {
@@ -198,6 +222,7 @@ const PlansPage = () => {
     setEditingId(null);
     setForm(emptyForm());
     setVerificationCodeInput("");
+    setVerificationCodeLoading(false);
   };
 
   const persistedPlan =
@@ -225,7 +250,7 @@ const PlansPage = () => {
       if (persistedCode) {
         setVerificationMap((m) => ({ ...m, [persistedCode]: true }));
       }
-      setVerificationCodeInput("");
+      setVerificationCodeInput(code);
       toast.success("Verification code saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save code");
@@ -242,6 +267,7 @@ const PlansPage = () => {
       if (persistedCode) {
         setVerificationMap((m) => ({ ...m, [persistedCode]: false }));
       }
+      setVerificationCodeInput("");
       toast.success("Verification removed");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not remove");
@@ -653,15 +679,18 @@ const PlansPage = () => {
                   </p>
                   <label className="flex flex-col gap-1">
                     <span className="text-xs text-white/50">
-                      New verification code (stored securely; not shown again)
+                      Verification code (shown for admin reference; students use this in the app)
                     </span>
                     <input
-                      type="password"
-                      autoComplete="new-password"
+                      type="text"
+                      autoComplete="off"
                       className="input-modal text-sm rounded-lg font-mono"
                       value={verificationCodeInput}
                       onChange={(e) => setVerificationCodeInput(e.target.value)}
-                      placeholder="Enter code to save"
+                      placeholder={
+                        verificationCodeLoading ? "Loading…" : "Enter or edit code, then save"
+                      }
+                      disabled={verificationSaving || verificationCodeLoading}
                     />
                   </label>
                   <div className="flex flex-wrap gap-2">

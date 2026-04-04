@@ -664,6 +664,18 @@ export const updateAdminSubscriptionPlan = async (
 };
 
 /** Batch Firestore `students_code` configured flags for plan codes (comma-separated query). */
+/** Current student verification code for a plan (admin only). */
+export const fetchAdminStudentVerification = async (planId: number) => {
+  return authenticatedRequest<{
+    status: string;
+    configured: boolean;
+    code: string | null;
+  }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_SUBSCRIPTION_PLANS}/${planId}/student-verification`,
+    "GET"
+  );
+};
+
 export const fetchStudentVerificationStatus = async (planCodes: string[]) => {
   const trimmed = Array.from(
     new Set(planCodes.map((c) => String(c || "").trim()).filter(Boolean))
