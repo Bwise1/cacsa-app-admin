@@ -263,16 +263,19 @@ const PlansPage = () => {
     }
     setSaving(true);
     try {
-      const payload = {
+      const payload: Parameters<typeof createAdminSubscriptionPlan>[0] &
+        Parameters<typeof updateAdminSubscriptionPlan>[1] = {
         name: form.name.trim(),
         description: form.description.trim() || null,
         amount: amountNum,
         interval: form.interval,
         currency: form.currency.trim() || "NGN",
-        plan_code: form.plan_code.trim() || null,
         plan_kind: form.plan_kind,
         is_active: form.is_active,
       };
+      if (editingId == null) {
+        payload.plan_code = form.plan_code.trim() || null;
+      }
       if (editingId != null) {
         await updateAdminSubscriptionPlan(editingId, payload);
         toast.success("Plan updated");
@@ -587,13 +590,31 @@ const PlansPage = () => {
           <label className="flex flex-col gap-1">
             <span className="text-xs text-white/50">Plan code (unique)</span>
             <input
-              className="input-modal text-sm rounded-lg font-mono"
+              className={`input-modal text-sm rounded-lg font-mono ${
+                editingId != null ? "opacity-75 cursor-not-allowed bg-white/5" : ""
+              }`}
               value={form.plan_code}
+              readOnly={editingId != null}
               onChange={(e) =>
                 setForm((f) => ({ ...f, plan_code: e.target.value }))
               }
               placeholder="e.g. nigeria"
+              title={
+                editingId != null
+                  ? "Plan code is fixed after creation (Firestore verification + mobile app)."
+                  : undefined
+              }
             />
+            {editingId != null ? (
+              <span className="text-xs text-white/45 leading-relaxed">
+                Cannot be changed: student verification and the app use this key in
+                Firestore. Create a new plan if you need a different code.
+              </span>
+            ) : (
+              <span className="text-xs text-white/45 leading-relaxed">
+                Choose carefully — it cannot be edited later.
+              </span>
+            )}
           </label>
           <label className="inline-flex items-center gap-2 cursor-pointer">
             <input
