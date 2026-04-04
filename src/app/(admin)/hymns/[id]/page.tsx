@@ -132,10 +132,10 @@ export default function HymnEditPage() {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bundle: nextBundle }),
+        body: JSON.stringify({ bundle: nextBundle, publish: false }),
       });
       if (!put.ok) throw new Error("save");
-      toast.success("Saved & published to Storage");
+      toast.success("Saved draft — use “Publish to apps” on the hymns list when ready");
       router.push("/hymns");
     } catch (e) {
       console.error(e);

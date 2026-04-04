@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import toast from "react-hot-toast";
 import type { HymnBundle, HymnManifest } from "@/lib/hymns/schema";
 
@@ -27,7 +27,11 @@ async function apiErrorMessage(r: Response): Promise<string> {
 const fetcher = async (url: string) => {
   const r = await fetch(url, { credentials: "include" });
   if (!r.ok) throw new Error(await apiErrorMessage(r));
-  return r.json() as Promise<{ bundle: HymnBundle; exists: boolean }>;
+  return r.json() as Promise<{
+    bundle: HymnBundle;
+    exists: boolean;
+    hasDraft?: boolean;
+  }>;
 };
 
 const fetchManifest = async (url: string) => {
@@ -40,10 +44,37 @@ const fetchManifest = async (url: string) => {
 };
 
 export default function HymnsPage() {
+  const { mutate } = useSWRConfig();
   const { data, error, isLoading } = useSWR("/api/hymns/bundle", fetcher);
   const { data: manifestData } = useSWR("/api/hymns/manifest", fetchManifest);
   const [q, setQ] = useState("");
   const [bookFilter, setBookFilter] = useState<string>("all");
+  const [publishing, setPublishing] = useState(false);
+
+  async function publishToApps() {
+    setPublishing(true);
+    try {
+      const r = await fetch("/api/hymns/publish", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!r.ok) {
+        throw new Error(await apiErrorMessage(r));
+      }
+      const j = (await r.json()) as { syncVersion?: number };
+      toast.success(
+        j.syncVersion != null
+          ? `Published to apps (sync v${j.syncVersion})`
+          : "Published to apps"
+      );
+      await mutate("/api/hymns/bundle");
+      await mutate("/api/hymns/manifest");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Publish failed");
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!data?.bundle) return [];
@@ -103,10 +134,23 @@ export default function HymnsPage() {
       <div>
         <h1 className="text-xl font-semibold text-white">Hymns</h1>
         <p className="text-sm text-white/60 mt-1">
-          Edit the JSON bundle stored in Firebase Storage. Revision:{" "}
+          Saves are <strong className="text-white/80">drafts</strong> until you
+          publish — mobile apps only see updates after{" "}
+          <strong className="text-white/80">Publish to apps</strong> (one sync
+          version bump, not per hymn edit).
+        </p>
+        <p className="text-sm text-white/50 mt-2">
+          Live sync version:{" "}
           <span className="text-green font-mono">
-            {data.bundle.contentRevision}
+            {manifestData?.manifest?.syncVersion ??
+              manifestData?.manifest?.contentRevision ??
+              data.bundle.contentRevision}
           </span>
+          {data.hasDraft ? (
+            <span className="ml-2 text-amber-300/90">
+              — unpublished draft in Storage
+            </span>
+          ) : null}
         </p>
       </div>
 
@@ -133,6 +177,14 @@ export default function HymnsPage() {
         >
           New hymn
         </Link>
+        <button
+          type="button"
+          disabled={publishing}
+          onClick={() => void publishToApps()}
+          className="inline-flex items-center rounded-md border border-green/60 bg-green/10 px-3 py-2 text-sm font-medium text-green hover:bg-green/20 disabled:opacity-50"
+        >
+          {publishing ? "Publishing…" : "Publish to apps"}
+        </button>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto rounded-md border border-white/15">
@@ -195,11 +247,14 @@ export default function HymnsPage() {
                 {manifestData.manifest.bundleUrl}
               </span>
               <br />
-              Revision{" "}
+              Sync v{" "}
               <span className="text-green">
-                {manifestData.manifest.contentRevision}
+                {manifestData.manifest.syncVersion ??
+                  manifestData.manifest.contentRevision}
               </span>
-              . SHA256: {manifestData.manifest.bundleSha256 ?? "—"}
+              {" "}
+              (contentRevision {manifestData.manifest.contentRevision}). SHA256:{" "}
+              {manifestData.manifest.bundleSha256 ?? "—"}
             </div>
           )}
         </div>

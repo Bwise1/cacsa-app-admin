@@ -14,7 +14,7 @@ function apiBase(): string | null {
  * Forwards the admin session JWT to cacsa_app_api, which performs Firebase Storage I/O.
  */
 export async function proxyHymnsRequest(
-  endpointKey: "ADMIN_HYMNS_BUNDLE" | "ADMIN_HYMNS_MANIFEST",
+  endpointKey: "ADMIN_HYMNS_BUNDLE" | "ADMIN_HYMNS_MANIFEST" | "ADMIN_HYMNS_PUBLISH",
   init?: RequestInit
 ): Promise<NextResponse> {
   const base = apiBase();

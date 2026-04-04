@@ -6,7 +6,10 @@ import Modal from "@/app/_components/Modal";
 import PaginationBar from "@/app/_components/PaginationBar";
 import {
   createAdminSubscriptionPlan,
+  deleteAdminStudentVerification,
   fetchAdminSubscriptionPlans,
+  fetchStudentVerificationStatus,
+  putAdminStudentVerification,
   updateAdminSubscriptionPlan,
 } from "@/lib/actions";
 import type { SubscriptionPlanRow } from "@/types";
@@ -17,6 +20,15 @@ import { BiSearch } from "react-icons/bi";
 import { PiCreditCard, PiNotePencil, PiPlus } from "react-icons/pi";
 
 const PAGE_SIZE = 10;
+
+const STUDENT_VERIFICATION_KINDS = new Set([
+  "individual_student",
+  "family_student",
+]);
+
+function isStudentVerificationKind(kind: string | undefined | null) {
+  return STUDENT_VERIFICATION_KINDS.has(String(kind || "").trim());
+}
 
 const INTERVALS = ["annually", "monthly"] as const;
 const PLAN_KINDS = [
@@ -74,6 +86,11 @@ const PlansPage = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<PlanForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [verificationMap, setVerificationMap] = useState<
+    Record<string, boolean>
+  >({});
+  const [verificationCodeInput, setVerificationCodeInput] = useState("");
+  const [verificationSaving, setVerificationSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!canManage) return;
@@ -82,12 +99,35 @@ const PlansPage = () => {
       const res = await fetchAdminSubscriptionPlans();
       if (res && "plans" in res && Array.isArray(res.plans)) {
         setPlans(res.plans);
+        const codes = Array.from(
+          new Set(
+            res.plans
+              .filter(
+                (p) =>
+                  isStudentVerificationKind(p.plan_kind) &&
+                  String(p.plan_code ?? "").trim() !== ""
+              )
+              .map((p) => String(p.plan_code).trim())
+          )
+        );
+        if (codes.length > 0) {
+          const st = await fetchStudentVerificationStatus(codes);
+          if (st?.configured && typeof st.configured === "object") {
+            setVerificationMap(st.configured);
+          } else {
+            setVerificationMap({});
+          }
+        } else {
+          setVerificationMap({});
+        }
       } else {
         setPlans([]);
+        setVerificationMap({});
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not load plans");
       setPlans([]);
+      setVerificationMap({});
     } finally {
       setLoading(false);
     }
@@ -157,6 +197,57 @@ const PlansPage = () => {
     setModalOpen(false);
     setEditingId(null);
     setForm(emptyForm());
+    setVerificationCodeInput("");
+  };
+
+  const persistedPlan =
+    editingId != null ? plans.find((p) => p.id === editingId) ?? null : null;
+  const persistedCode =
+    persistedPlan?.plan_code && String(persistedPlan.plan_code).trim() !== ""
+      ? String(persistedPlan.plan_code).trim()
+      : "";
+  const persistedIsStudent =
+    persistedPlan != null && isStudentVerificationKind(persistedPlan.plan_kind);
+  const formIsStudent = isStudentVerificationKind(form.plan_kind);
+  const verificationConfigured =
+    persistedCode !== "" ? Boolean(verificationMap[persistedCode]) : false;
+
+  const handleSaveVerification = async () => {
+    if (editingId == null) return;
+    const code = verificationCodeInput.trim();
+    if (!code) {
+      toast.error("Enter a verification code");
+      return;
+    }
+    setVerificationSaving(true);
+    try {
+      await putAdminStudentVerification(editingId, code);
+      if (persistedCode) {
+        setVerificationMap((m) => ({ ...m, [persistedCode]: true }));
+      }
+      setVerificationCodeInput("");
+      toast.success("Verification code saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save code");
+    } finally {
+      setVerificationSaving(false);
+    }
+  };
+
+  const handleRemoveVerification = async () => {
+    if (editingId == null) return;
+    setVerificationSaving(true);
+    try {
+      await deleteAdminStudentVerification(editingId);
+      if (persistedCode) {
+        setVerificationMap((m) => ({ ...m, [persistedCode]: false }));
+      }
+      toast.success("Verification removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove");
+    } finally {
+      setVerificationSaving(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -258,7 +349,8 @@ const PlansPage = () => {
             <h1 className="text-lg font-medium text-white">Subscription plans</h1>
             <p className="text-sm text-white/50 -mt-1">
               Amounts and plan codes are used by the app and Paystack checkout.
-              Inactive plans are hidden from new purchases.
+              Inactive plans are hidden from new purchases. Student plans store a
+              separate verification code in Firestore (edit plan to manage).
             </p>
 
             <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center w-full">
@@ -313,25 +405,44 @@ const PlansPage = () => {
                     <th className="p-2">Kind</th>
                     <th className="p-2">Amount (NGN)</th>
                     <th className="p-2">Interval</th>
+                    <th className="p-2">Verification</th>
                     <th className="p-2">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="p-6 text-white/50">
+                      <td colSpan={7} className="p-6 text-white/50">
                         Loading…
                       </td>
                     </tr>
                   ) : paginated.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-6 text-white/50">
+                      <td colSpan={7} className="p-6 text-white/50">
                         No plans match.
                       </td>
                     </tr>
                   ) : (
                     paginated.map((p) => {
                       const active = p.is_active === 1 || p.is_active === true;
+                      const pc = String(p.plan_code ?? "").trim();
+                      const isStudent = isStudentVerificationKind(p.plan_kind);
+                      let verificationCell: React.ReactNode = "—";
+                      if (isStudent) {
+                        if (!pc) {
+                          verificationCell = (
+                            <span className="text-white/40 text-xs">No code</span>
+                          );
+                        } else if (verificationMap[pc]) {
+                          verificationCell = (
+                            <span className="text-green text-sm">Set</span>
+                          );
+                        } else {
+                          verificationCell = (
+                            <span className="text-amber-200/90 text-sm">Not set</span>
+                          );
+                        }
+                      }
                       return (
                         <tr
                           key={p.id}
@@ -351,6 +462,7 @@ const PlansPage = () => {
                           <td className="p-2 text-sm">{p.plan_kind}</td>
                           <td className="p-2 tabular-nums">{String(p.amount)}</td>
                           <td className="p-2">{p.interval}</td>
+                          <td className="p-2 text-sm">{verificationCell}</td>
                           <td className="p-2">
                             <span
                               className={
@@ -494,6 +606,76 @@ const PlansPage = () => {
             />
             <span className="text-sm text-white/80">Active (shown in app)</span>
           </label>
+
+          {editingId != null && formIsStudent && (
+            <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+              <h3 className="text-sm font-medium text-white/90">
+                Student verification (Firestore)
+              </h3>
+              {!persistedIsStudent || !persistedCode ? (
+                <p className="text-xs text-white/50 leading-relaxed">
+                  Save this plan with kind <code className="text-white/70">individual_student</code>{" "}
+                  or <code className="text-white/70">family_student</code> and a non-empty plan code
+                  before setting the verification code.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-white/50">
+                    Status:{" "}
+                    <span
+                      className={
+                        verificationConfigured ? "text-green" : "text-amber-200/90"
+                      }
+                    >
+                      {verificationConfigured ? "Configured" : "Not configured"}
+                    </span>
+                  </p>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs text-white/50">
+                      New verification code (stored securely; not shown again)
+                    </span>
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      className="input-modal text-sm rounded-lg font-mono"
+                      value={verificationCodeInput}
+                      onChange={(e) => setVerificationCodeInput(e.target.value)}
+                      placeholder="Enter code to save"
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveVerification()}
+                      disabled={
+                        verificationSaving || verificationCodeInput.trim() === ""
+                      }
+                      className={`text-sm px-4 py-2 rounded-md ${
+                        verificationSaving || verificationCodeInput.trim() === ""
+                          ? "bg-ca-grey opacity-50 cursor-not-allowed"
+                          : "bg-green hover:opacity-90 cursor-pointer"
+                      } text-white`}
+                    >
+                      Save verification
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleRemoveVerification()}
+                      disabled={verificationSaving || !verificationConfigured}
+                      className={`text-sm px-4 py-2 rounded-md border border-white/20 ${
+                        verificationSaving || !verificationConfigured
+                          ? "opacity-40 cursor-not-allowed"
+                          : "hover:bg-white/10 cursor-pointer"
+                      }`}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2 pt-2 border-t border-white/10">
             <Button
               type="submit"

@@ -6,17 +6,17 @@ import {
 } from "@/types";
 import { API_ENDPOINTS } from "./endpoints";
 import { ApiResponse } from "@/types";
+import { authenticatedRequest as runAuthenticatedRequest } from "./api";
+import { getSession } from "next-auth/react";
 
 const serverUrl = process.env.NEXT_PUBLIC_REST_API_ENDPOINT;
 
-/** Lazy-loads `next-auth/react` only when these run in the browser — avoids pulling client auth into the API route / RSC server graph. */
 async function authenticatedRequest<T>(
   url: string,
   method: string = "GET",
   data: unknown = null
 ): Promise<T | null> {
-  const { authenticatedRequest: impl } = await import("./api");
-  return impl<T>(url, method, data);
+  return runAuthenticatedRequest<T>(url, method, data);
 }
 
 export { loginUser } from "./loginUser";
@@ -554,11 +554,68 @@ export const revokeAdminInvitation = async (id: number) => {
 export const sendBroadcastNotification = async (body: {
   title: string;
   body: string;
+  /** all | subscribed | state | uids */
+  audience?: string;
+  /** @deprecated use `states` */
+  state?: string;
+  /** When audience is `state`: MySQL/API `state_name` values (matches Firestore `users.state`) */
+  states?: string[];
+  /** When audience is `uids`: Firebase Auth UIDs (= Firestore `users` document ids) */
+  uids?: string[];
 }) => {
   return authenticatedRequest(
     `${serverUrl}${API_ENDPOINTS.ADMIN_BROADCAST}`,
     "POST",
     body
+  );
+};
+
+export type YtStreamChannel = {
+  id: string;
+  link: string;
+  name: string;
+  section: "primary" | "other";
+};
+
+export const fetchAdminYtStreamChannels = async () => {
+  return authenticatedRequest<{ status: string; channels: YtStreamChannel[] }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_YT_STREAM}`,
+    "GET"
+  );
+};
+
+export const updateAdminYtStreamChannel = async (
+  docId: string,
+  body: Partial<{ link: string; name: string; section: "primary" | "other" }>
+) => {
+  const enc = encodeURIComponent(docId);
+  return authenticatedRequest<{ status: string }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_YT_STREAM}/${enc}`,
+    "PUT",
+    body
+  );
+};
+
+export type BroadcastNotificationRow = {
+  title: string;
+  body: string;
+  timeStamp: string;
+};
+
+export const fetchAdminBroadcastNotifications = async () => {
+  return authenticatedRequest<{
+    status: string;
+    notifications: BroadcastNotificationRow[];
+  }>(`${serverUrl}${API_ENDPOINTS.ADMIN_BROADCAST_NOTIFICATIONS}`, "GET");
+};
+
+export const removeAdminBroadcastNotification = async (
+  entry: BroadcastNotificationRow
+) => {
+  return authenticatedRequest<{ status: string }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_BROADCAST_NOTIFICATIONS_REMOVE}`,
+    "POST",
+    entry
   );
 };
 
@@ -603,6 +660,36 @@ export const updateAdminSubscriptionPlan = async (
     `${serverUrl}${API_ENDPOINTS.ADMIN_SUBSCRIPTION_PLANS}/${id}`,
     "PUT",
     body
+  );
+};
+
+/** Batch Firestore `students_code` configured flags for plan codes (comma-separated query). */
+export const fetchStudentVerificationStatus = async (planCodes: string[]) => {
+  const trimmed = Array.from(
+    new Set(planCodes.map((c) => String(c || "").trim()).filter(Boolean))
+  );
+  if (trimmed.length === 0) {
+    return { status: "success" as const, configured: {} as Record<string, boolean> };
+  }
+  const params = new URLSearchParams({ planCodes: trimmed.join(",") });
+  return authenticatedRequest<{
+    status: string;
+    configured: Record<string, boolean>;
+  }>(`${serverUrl}${API_ENDPOINTS.ADMIN_STUDENT_VERIFICATION_STATUS}?${params}`, "GET");
+};
+
+export const putAdminStudentVerification = async (planId: number, code: string) => {
+  return authenticatedRequest<{ status: string }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_SUBSCRIPTION_PLANS}/${planId}/student-verification`,
+    "PUT",
+    { code }
+  );
+};
+
+export const deleteAdminStudentVerification = async (planId: number) => {
+  return authenticatedRequest<{ status: string }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_SUBSCRIPTION_PLANS}/${planId}/student-verification`,
+    "DELETE"
   );
 };
 
@@ -731,7 +818,6 @@ export const fetchAdStats = async (id: number, days: number = 30) => {
 };
 
 export const uploadAdImage = async (formData: FormData) => {
-  const { getSession } = await import("next-auth/react");
   const session = await getSession();
   if (!session?.user?.accessToken) {
     throw new Error("User session or accessToken not found.");

@@ -56,6 +56,8 @@ export type HymnBundle = {
 export type HymnManifest = {
   schemaVersion: number;
   contentRevision: number;
+  /** Bumps only when you publish to Storage — use this for mobile sync (falls back to contentRevision). */
+  syncVersion?: number;
   bundleUrl: string;
   bundleSha256?: string | null;
   minAppVersion?: string | null;
@@ -64,7 +66,7 @@ export type HymnManifest = {
 export function emptyBundle(): HymnBundle {
   return {
     schemaVersion: HYMN_SCHEMA_VERSION,
-    contentRevision: 1,
+    contentRevision: 0,
     updatedAt: new Date().toISOString(),
     defaultLocale: "en",
     supportedLocales: ["en", "yo"],
