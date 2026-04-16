@@ -198,12 +198,10 @@ const LocationPage = () => {
     if (
       locationInfo.address === "" ||
       locationInfo.name === "" ||
-      locationInfo.isHQ === "" ||
-      locationInfo.phone === "" ||
       locationInfo.type === "" ||
       locationInfo.stateId == null
     ) {
-      toast.error("Please check that all fields are filled");
+      toast.error("Please fill name, state, address and branch type");
       return;
     }
     setIsSubmitting(true);
@@ -493,7 +491,7 @@ const LocationPage = () => {
             <input
               type="number"
               id="longitude"
-              placeholder="Longitude"
+              placeholder="Longitude (optional)"
               className="input-modal"
               step="any"
               value={
@@ -504,7 +502,7 @@ const LocationPage = () => {
             <input
               type="number"
               id="latitude"
-              placeholder="Latitude"
+              placeholder="Latitude (optional)"
               className="input-modal"
               step="any"
               value={
@@ -517,7 +515,7 @@ const LocationPage = () => {
             <input
               type="text"
               id="website"
-              placeholder="website"
+              placeholder="website (optional)"
               className="input-modal"
               value={locationInfo.website}
               onChange={handleInputChange}
@@ -525,7 +523,7 @@ const LocationPage = () => {
             <input
               type="text"
               id="phone"
-              placeholder="phone"
+              placeholder="phone (optional)"
               className="input-modal"
               value={locationInfo.phone}
               onChange={handleInputChange}

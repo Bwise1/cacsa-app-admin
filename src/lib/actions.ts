@@ -281,6 +281,7 @@ export type AppUserRow = {
   email: string;
   emailVerified: boolean;
   createdAt: string;
+  subscribedAt?: string;
   lastSignInAt?: string;
   isSubscribed: boolean;
   /** Firestore subscription doc fields when present (admin list). */
@@ -302,6 +303,26 @@ export type AppUsersListPayload = {
   status: string;
   users: AppUserRow[];
   nextPageToken: string | null;
+};
+
+export type AdminMobileUpdateConfig = {
+  enabled: boolean;
+  latest_version: string;
+  latest_build: number | null;
+  min_supported_build: number | null;
+  message: string;
+  update_url: string;
+  ios_url: string;
+  android_url: string;
+  updated_at?: string | null;
+  updated_by?: string | null;
+};
+
+export type AdminAddSubscriberPayload = {
+  status: string;
+  outcome: "granted" | "already_subscribed";
+  uid: string;
+  message?: string;
 };
 
 export const fetchOverviewMetrics = async (): Promise<OverviewMetricsPayload | null> => {
@@ -374,6 +395,20 @@ export const adminUnsubscribeAppUser = async (uid: string): Promise<{ status: st
   return authenticatedRequest(
     `${serverUrl}${API_ENDPOINTS.ADMIN_APP_USERS}/${encodeURIComponent(uid)}/unsubscribe`,
     "POST"
+  );
+};
+
+export const adminAddSubscriber = async (body: {
+  identifier?: string;
+  uid?: string;
+  email?: string;
+  planId: number;
+  expiresAt?: string | null;
+}): Promise<AdminAddSubscriberPayload | null> => {
+  return authenticatedRequest<AdminAddSubscriberPayload>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_APP_USERS_SUBSCRIBE}`,
+    "POST",
+    body
   );
 };
 
@@ -622,6 +657,30 @@ export const removeAdminBroadcastNotification = async (
 export const fetchAdminSubscriptionPlans = async () => {
   return authenticatedRequest<{ status: string; plans: SubscriptionPlanRow[] }>(
     `${serverUrl}${API_ENDPOINTS.ADMIN_SUBSCRIPTION_PLANS}`,
+    "GET"
+  );
+};
+
+export const fetchAdminMobileUpdateConfig = async () => {
+  return authenticatedRequest<{ status: string; config: AdminMobileUpdateConfig }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_MOBILE_UPDATE_CONFIG}`,
+    "GET"
+  );
+};
+
+export const updateAdminMobileUpdateConfig = async (
+  body: Partial<AdminMobileUpdateConfig>
+) => {
+  return authenticatedRequest<{ status: string; config: AdminMobileUpdateConfig }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_MOBILE_UPDATE_CONFIG}`,
+    "PUT",
+    body
+  );
+};
+
+export const fetchAdminSubscriberPlans = async () => {
+  return authenticatedRequest<{ status: string; plans: SubscriptionPlanRow[] }>(
+    `${serverUrl}${API_ENDPOINTS.ADMIN_SUBSCRIBER_PLANS}`,
     "GET"
   );
 };

@@ -6,7 +6,12 @@ import { signOut, useSession } from "next-auth/react";
 import { ImSwitch } from "react-icons/im";
 import { HiOutlineMusicNote } from "react-icons/hi";
 import { BiLocationPlus } from "react-icons/bi";
-import { MdOutlineAdminPanelSettings, MdOutlineEmail, MdOutlineShare } from "react-icons/md";
+import {
+  MdOutlineAdminPanelSettings,
+  MdOutlineEmail,
+  MdOutlineShare,
+  MdSystemUpdateAlt,
+} from "react-icons/md";
 import {
   HiOutlineBell,
   HiOutlineBookOpen,
@@ -93,6 +98,12 @@ const Navbar: React.FC = () => {
           <Link className={linkClass("/plans")} href="/plans">
             <PiCreditCard className={iconClass} aria-hidden />
             <span>Plans</span>
+          </Link>
+        )}
+        {has("admin:manage_app_update") && (
+          <Link className={linkClass("/app-update")} href="/app-update">
+            <MdSystemUpdateAlt className={iconClass} aria-hidden />
+            <span>App update</span>
           </Link>
         )}
         {has("admin:manage_roles") && (

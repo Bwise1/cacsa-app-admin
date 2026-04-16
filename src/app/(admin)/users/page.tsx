@@ -1,16 +1,21 @@
 "use client";
 
+import Button from "@/app/_components/Button";
 import Card from "@/app/_components/Card";
+import Modal from "@/app/_components/Modal";
 import PaginationBar from "@/app/_components/PaginationBar";
 import StatCard from "@/app/_components/StatCard";
 import {
+  adminAddSubscriber,
   adminDeleteAppUser,
   adminUnsubscribeAppUser,
   AppUserRow,
+  fetchAdminSubscriberPlans,
   fetchAppUsers,
   fetchUsersStats,
   UsersStatsPayload,
 } from "@/lib/actions";
+import type { SubscriptionPlanRow } from "@/types";
 import { useSession } from "next-auth/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
@@ -79,8 +84,16 @@ const UsersPage = () => {
   const [nextTokenAfterPage, setNextTokenAfterPage] = useState<
     Record<number, string | null>
   >({});
+  const [queryEpoch, setQueryEpoch] = useState(0);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [actionUid, setActionUid] = useState<string | null>(null);
+  const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
+  const [subscriberIdentifier, setSubscriberIdentifier] = useState("");
+  const [subscriberPlanId, setSubscriberPlanId] = useState<number | null>(null);
+  const [subscriberExpiresAt, setSubscriberExpiresAt] = useState("");
+  const [subscriberPlans, setSubscriberPlans] = useState<SubscriptionPlanRow[]>([]);
+  const [loadingSubscriberPlans, setLoadingSubscriberPlans] = useState(false);
+  const [submittingSubscriber, setSubmittingSubscriber] = useState(false);
 
   const rowsRef = useRef(rowsByPage);
   const tokensRef = useRef(nextTokenAfterPage);
@@ -125,6 +138,7 @@ const UsersPage = () => {
     setPage(1);
     setRowsByPage({});
     setNextTokenAfterPage({});
+    setQueryEpoch((v) => v + 1);
   }, []);
 
   useEffect(() => {
@@ -211,7 +225,7 @@ const UsersPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [page, filter, isEmailMode]);
+  }, [page, filter, isEmailMode, queryEpoch]);
 
   const currentRows = isEmailMode
     ? rowsByPage[1] ?? []
@@ -296,6 +310,77 @@ const UsersPage = () => {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setActionUid(null);
+    }
+  };
+
+  const loadSubscriberPlans = useCallback(async () => {
+    if (!canManageSubs) return;
+    setLoadingSubscriberPlans(true);
+    try {
+      const res = await fetchAdminSubscriberPlans();
+      const plans = Array.isArray(res?.plans) ? res.plans : [];
+      setSubscriberPlans(plans);
+      setSubscriberPlanId((prev) => {
+        if (prev && plans.some((p) => Number(p.id) === prev)) return prev;
+        return plans.length ? Number(plans[0].id) : null;
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not load plans");
+      setSubscriberPlans([]);
+      setSubscriberPlanId(null);
+    } finally {
+      setLoadingSubscriberPlans(false);
+    }
+  }, [canManageSubs]);
+
+  const openSubscribeModal = () => {
+    if (!canManageSubs) return;
+    setSubscriberIdentifier("");
+    setSubscriberExpiresAt("");
+    setSubscribeModalOpen(true);
+    if (subscriberPlans.length === 0) {
+      void loadSubscriberPlans();
+    }
+  };
+
+  const closeSubscribeModal = () => {
+    if (submittingSubscriber) return;
+    setSubscribeModalOpen(false);
+    setSubscriberIdentifier("");
+    setSubscriberExpiresAt("");
+  };
+
+  const onAddSubscriber = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canManageSubs) return;
+    const identifier = subscriberIdentifier.trim();
+    if (!identifier) {
+      toast.error("Enter existing user email or UID");
+      return;
+    }
+    if (!subscriberPlanId) {
+      toast.error("Select a plan");
+      return;
+    }
+
+    setSubmittingSubscriber(true);
+    try {
+      const res = await adminAddSubscriber({
+        identifier,
+        planId: subscriberPlanId,
+        expiresAt: subscriberExpiresAt.trim() || null,
+      });
+      if (res?.outcome === "already_subscribed") {
+        toast("User already has an active subscription.");
+      } else {
+        toast.success("Subscriber added");
+      }
+      await reloadAfterAction();
+      setSubscribeModalOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add subscriber");
+    } finally {
+      setSubmittingSubscriber(false);
     }
   };
 
@@ -388,6 +473,15 @@ const UsersPage = () => {
                   </option>
                 </select>
               </label>
+              {canManageSubs ? (
+                <button
+                  type="button"
+                  onClick={openSubscribeModal}
+                  className="bg-green text-sm px-4 py-2.5 rounded-md min-h-[2.75rem] shrink-0 hover:opacity-90"
+                >
+                  Add subscriber
+                </button>
+              ) : null}
             </div>
 
             <div className="w-full flex-1 min-h-0 overflow-auto mt-4">
@@ -398,19 +492,20 @@ const UsersPage = () => {
                     <th className="p-2">User UID</th>
                     <th className="p-2">Plan</th>
                     <th className="p-2">Date created</th>
+                    <th className="p-2">Date subscribed</th>
                     <th className="p-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {showTableLoading ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-white/50">
+                      <td colSpan={6} className="p-6 text-white/50">
                         Loading…
                       </td>
                     </tr>
                   ) : currentRows.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-white/50">
+                      <td colSpan={6} className="p-6 text-white/50">
                         {isEmailMode
                           ? "No user with that email."
                           : "No users on this page."}
@@ -432,7 +527,12 @@ const UsersPage = () => {
                           {formatPlanSummary(row)}
                         </td>
                         <td className="p-2 text-white/90">
-                          {formatDdMmYy(row.createdAt)}
+                          {formatDdMmYy(row.createdAt || row.subscribedAt)}
+                        </td>
+                        <td className="p-2 text-white/90">
+                          {row.isSubscribed
+                            ? formatDdMmYy(row.subscribedAt)
+                            : "—"}
                         </td>
                         <td className="p-2 text-right whitespace-nowrap">
                           {canManageSubs ? (
@@ -484,6 +584,86 @@ const UsersPage = () => {
           </div>
         </Card>
       </div>
+      <Modal
+        isOpen={subscribeModalOpen}
+        onClose={closeSubscribeModal}
+        shellClassName="relative w-[min(520px,calc(100vw-2rem))] h-auto max-w-[min(520px,calc(100vw-2rem))]"
+        bodyClassName="modal-content relative bg-black px-10 py-6 sm:px-12 rounded-lg max-h-[calc(100vh-4rem)] overflow-y-auto shadow-lg"
+        cardClassName="h-auto min-h-0"
+      >
+        <form onSubmit={onAddSubscriber} className="pt-8 flex flex-col gap-4 text-white">
+          <h2 className="text-lg font-semibold">Add subscriber</h2>
+          <p className="text-xs text-white/60 leading-relaxed">
+            Grants an active subscription to an existing app user. If the user already has
+            active access, no changes will be made.
+          </p>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-white/50">User email or UID</span>
+            <input
+              type="text"
+              autoComplete="off"
+              value={subscriberIdentifier}
+              onChange={(e) => setSubscriberIdentifier(e.target.value)}
+              placeholder="name@example.com or firebase-uid"
+              className="input-modal text-sm rounded-lg"
+              disabled={submittingSubscriber}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-white/50">Plan</span>
+            <select
+              value={subscriberPlanId ?? ""}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setSubscriberPlanId(Number.isFinite(next) ? next : null);
+              }}
+              className="input-modal text-sm rounded-lg"
+              disabled={submittingSubscriber || loadingSubscriberPlans}
+              required
+            >
+              {loadingSubscriberPlans ? (
+                <option value="">Loading plans…</option>
+              ) : subscriberPlans.length === 0 ? (
+                <option value="">No active plans</option>
+              ) : (
+                subscriberPlans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} ({plan.currency} {String(plan.amount)})
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-white/50">Expiration date (optional)</span>
+            <input
+              type="datetime-local"
+              value={subscriberExpiresAt}
+              onChange={(e) => setSubscriberExpiresAt(e.target.value)}
+              className="input-modal text-sm rounded-lg"
+              disabled={submittingSubscriber}
+            />
+            <span className="text-xs text-white/45">
+              Leave empty to default to one year from now.
+            </span>
+          </label>
+          <div className="flex gap-2 pt-2 border-t border-white/10">
+            <Button
+              type="submit"
+              label="Add subscriber"
+              className="bg-green text-sm"
+              isLoading={submittingSubscriber}
+            />
+            <Button
+              type="button"
+              label="Cancel"
+              className="bg-ca-grey text-sm"
+              onClick={closeSubscribeModal}
+            />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
