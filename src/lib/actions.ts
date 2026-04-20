@@ -310,6 +310,8 @@ export type AdminMobileUpdateConfig = {
   latest_version: string;
   latest_build: number | null;
   min_supported_build: number | null;
+  ios_latest_build: number | null;
+  ios_min_supported_build: number | null;
   message: string;
   update_url: string;
   ios_url: string;

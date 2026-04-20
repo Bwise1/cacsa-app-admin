@@ -18,6 +18,8 @@ const defaultForm: UpdateForm = {
   latest_version: "",
   latest_build: null,
   min_supported_build: null,
+  ios_latest_build: null,
+  ios_min_supported_build: null,
   message: "",
   update_url: "",
   ios_url: "",
@@ -67,6 +69,10 @@ export default function AppUpdatePage() {
         latest_build: form.latest_build == null ? null : Number(form.latest_build),
         min_supported_build:
           form.min_supported_build == null ? null : Number(form.min_supported_build),
+        ios_latest_build:
+          form.ios_latest_build == null ? null : Number(form.ios_latest_build),
+        ios_min_supported_build:
+          form.ios_min_supported_build == null ? null : Number(form.ios_min_supported_build),
         message: form.message.trim(),
         update_url: form.update_url.trim(),
         ios_url: form.ios_url.trim(),
@@ -149,23 +155,62 @@ export default function AppUpdatePage() {
             </label>
           </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-white/50">Minimum supported build (force update below this)</span>
-            <input
-              type="number"
-              min={0}
-              className="input-modal text-sm rounded-lg max-w-xs"
-              value={form.min_supported_build ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  min_supported_build:
-                    e.target.value === "" ? null : Number(e.target.value),
-                }))
-              }
-              disabled={loading || saving}
-            />
-          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-white/50">Min supported build — Android (force update below this)</span>
+              <input
+                type="number"
+                min={0}
+                className="input-modal text-sm rounded-lg"
+                value={form.min_supported_build ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    min_supported_build:
+                      e.target.value === "" ? null : Number(e.target.value),
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-white/50">Min supported build — iOS (overrides Android if set)</span>
+              <input
+                type="number"
+                min={0}
+                className="input-modal text-sm rounded-lg"
+                value={form.ios_min_supported_build ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    ios_min_supported_build:
+                      e.target.value === "" ? null : Number(e.target.value),
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-white/50">Latest build — iOS (overrides shared if set)</span>
+              <input
+                type="number"
+                min={0}
+                className="input-modal text-sm rounded-lg"
+                value={form.ios_latest_build ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    ios_latest_build:
+                      e.target.value === "" ? null : Number(e.target.value),
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </label>
+          </div>
 
           <label className="flex flex-col gap-1">
             <span className="text-xs text-white/50">Popup message</span>
