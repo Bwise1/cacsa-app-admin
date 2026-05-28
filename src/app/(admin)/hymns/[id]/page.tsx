@@ -30,6 +30,7 @@ export default function HymnEditPage() {
   const [localeTab, setLocaleTab] = useState<"en" | "yo">("en");
   const [versesEn, setVersesEn] = useState("[]");
   const [versesYo, setVersesYo] = useState("[]");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +92,31 @@ export default function HymnEditPage() {
         lines: o.lines.map(String),
       };
     });
+  }
+
+  async function deleteHymn() {
+    if (!bundle || !entry) return;
+    if (!confirm(`Delete hymn "${entry.locales.en?.title || entry.id}"? This saves as a draft — publish to apply.`)) return;
+    setDeleting(true);
+    try {
+      const nextBundle: HymnBundle = {
+        ...bundle,
+        hymns: bundle.hymns.filter((h) => h.id !== entry.id),
+      };
+      const put = await fetch("/api/hymns/bundle", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bundle: nextBundle, publish: false }),
+      });
+      if (!put.ok) throw new Error("delete");
+      toast.success("Hymn deleted — use "Publish to apps" to apply.");
+      router.push("/hymns");
+    } catch {
+      toast.error("Delete failed.");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function save() {
@@ -307,7 +333,7 @@ export default function HymnEditPage() {
         />
       </label>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button
           type="button"
           onClick={() => void save()}
@@ -321,6 +347,16 @@ export default function HymnEditPage() {
         >
           Cancel
         </Link>
+        {!isNew && (
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={() => void deleteHymn()}
+            className="ml-auto rounded-md border border-red-500/60 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+          >
+            {deleting ? "Deleting…" : "Delete hymn"}
+          </button>
+        )}
       </div>
     </div>
   );
