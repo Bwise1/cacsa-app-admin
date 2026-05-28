@@ -110,7 +110,7 @@ export default function HymnEditPage() {
         body: JSON.stringify({ bundle: nextBundle, publish: false }),
       });
       if (!put.ok) throw new Error("delete");
-      toast.success("Hymn deleted — use "Publish to apps" to apply.");
+      toast.success('Hymn deleted — use "Publish to apps" to apply.');
       router.push("/hymns");
     } catch {
       toast.error("Delete failed.");
@@ -161,7 +161,7 @@ export default function HymnEditPage() {
         body: JSON.stringify({ bundle: nextBundle, publish: false }),
       });
       if (!put.ok) throw new Error("save");
-      toast.success("Saved draft — use “Publish to apps” on the hymns list when ready");
+      toast.success('Saved draft — use “Publish to apps” on the hymns list when ready');
       router.push("/hymns");
     } catch (e) {
       console.error(e);
